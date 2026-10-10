@@ -1,0 +1,110 @@
+schema_version: 1
+kind: question_bank
+id: ats026-section-040
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material; not official examination questions.
+scope:
+  type: section
+  id: section-040
+  title: Use the Gateway API to manage Ingress traffic
+placement:
+  position: after
+  reading: sections/section-040/module-01/course-02-summary.md
+questions:
+- id: ats026-section-040-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Distinguish infrastructure class, listener and route roles.
+  source_readings:
+  - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  prompt: Which Gateway API object describes application HTTP matching and forwarding?
+  options:
+  - id: a
+    text: An HTTPRoute
+    explanation: Routes express the relevant application traffic rules.
+  - id: b
+    text: Only a GatewayClass
+    explanation: A class identifies implementation rather than the complete application route.
+  - id: c
+    text: A PersistentVolume
+    explanation: Storage resources do not declare HTTP route matches.
+  correct_option: a
+  explanation: Routes express the relevant application traffic rules.
+- id: ats026-section-040-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Evaluate namespace attachment and hostname relationships.
+  source_readings:
+  - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  prompt: A route names a Gateway but its namespace is not allowed by the listener. What is missing?
+  options:
+  - id: a
+    text: A guaranteed database snapshot
+    explanation: Data backup does not authorize attachment.
+  - id: b
+    text: A larger CPU request
+    explanation: Compute allocation does not change attachment policy.
+  - id: c
+    text: Permission for that route attachment
+    explanation: Parent reference and listener acceptance are two sides of the relationship.
+  correct_option: c
+  explanation: Parent reference and listener acceptance are two sides of the relationship.
+- id: ats026-section-040-q03
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain backend references and ReferenceGrant permission.
+  source_readings:
+  - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  prompt: A route references a Service in another namespace. What may be required in that target namespace?
+  options:
+  - id: a
+    text: Only a similarly named Pod
+    explanation: Name similarity does not authorize the reference.
+  - id: b
+    text: An appropriate ReferenceGrant
+    explanation: Supported cross-namespace backend references need permission under their contract.
+  - id: c
+    text: Only permission to attach to any listener
+    explanation: Attachment and backend reference permission are separate.
+  correct_option: b
+  explanation: Supported cross-namespace backend references need permission under their contract.
+- id: ats026-section-040-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Interpret acceptance, programming and reference conditions.
+  source_readings:
+  - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  prompt: The route is accepted but backend references are unresolved. What should be examined?
+  options:
+  - id: a
+    text: The intended parent status and referenced objects or permissions
+    explanation: Acceptance does not prove every reference is usable.
+  - id: b
+    text: Assume every backend is healthy automatically
+    explanation: Reference and endpoint evidence remains necessary.
+  - id: c
+    text: Only the order of prose paragraphs
+    explanation: Author formatting does not resolve traffic references.
+  correct_option: a
+  explanation: Acceptance does not prove every reference is usable.
+- id: ats026-section-040-q05
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Interpret acceptance, programming and reference conditions.
+  source_readings:
+  - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  prompt: A Gateway declaration exists without a compatible implementation. What can fail?
+  options:
+  - id: a
+    text: Only a container's image build
+    explanation: The stated dependency is traffic implementation.
+  - id: b
+    text: Nothing; the API server always forwards the traffic itself
+    explanation: Resource storage is not a universal Gateway data plane.
+  - id: c
+    text: Provisioning and programming of an active traffic path
+    explanation: Schemas alone do not supply the controller or data plane.
+  correct_option: c
+  explanation: Schemas alone do not supply the controller or data plane.
