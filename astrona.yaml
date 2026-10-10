@@ -1,0 +1,95 @@
+# Preparation scaffold. Technical pages stay draft until authoring and review.
+training:
+  id: ATS026
+  title: 'CKA: Services & Networking'
+  description: Preparation scaffold for Services & Networking. Lessons and environments are planned.
+  certification:
+    name: Certified Kubernetes Administrator
+    code: CKA
+    provider: CNCF / Linux Foundation
+    domain: Services & Networking
+    weight: 20
+    competencies:
+    - Understand connectivity between Pods
+    - Define and enforce Network Policies
+    - Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+    - Use the Gateway API to manage Ingress traffic
+    - Know how to use Ingress controllers and Ingress resources
+    - Understand and use CoreDNS
+modules:
+- id: module-intro
+  title: Introduction
+  description: Planned introduction and authoring status.
+  content:
+  - type: reading
+    title: Introduction
+    path: sections/intro/README.md
+  - type: reading
+    title: Welcome To The Course
+    path: sections/intro/course-01-welcome.md
+  - type: reading
+    title: Get Your Machine Ready
+    path: sections/intro/course-02-get-your-machine-ready.md
+  - type: reading
+    title: How This Course Is Made
+    path: sections/intro/course-03-how-this-course-is-made.md
+- id: module-010
+  title: Understand connectivity between Pods
+  description: Planned coverage of this curriculum objective.
+  content:
+  - type: reading
+    title: Section Overview
+    path: sections/section-010/README.md
+  - type: reading
+    title: Understand connectivity between Pods
+    path: sections/section-010/module-01/course.md
+- id: module-020
+  title: Define and enforce Network Policies
+  description: Planned coverage of this curriculum objective.
+  content:
+  - type: reading
+    title: Section Overview
+    path: sections/section-020/README.md
+  - type: reading
+    title: Define and enforce Network Policies
+    path: sections/section-020/module-01/course.md
+- id: module-030
+  title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+  description: Planned coverage of this curriculum objective.
+  content:
+  - type: reading
+    title: Section Overview
+    path: sections/section-030/README.md
+  - type: reading
+    title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+    path: sections/section-030/module-01/course.md
+- id: module-040
+  title: Use the Gateway API to manage Ingress traffic
+  description: Planned coverage of this curriculum objective.
+  content:
+  - type: reading
+    title: Section Overview
+    path: sections/section-040/README.md
+  - type: reading
+    title: Use the Gateway API to manage Ingress traffic
+    path: sections/section-040/module-01/course.md
+- id: module-050
+  title: Know how to use Ingress controllers and Ingress resources
+  description: Planned coverage of this curriculum objective.
+  content:
+  - type: reading
+    title: Section Overview
+    path: sections/section-050/README.md
+  - type: reading
+    title: Know how to use Ingress controllers and Ingress resources
+    path: sections/section-050/module-01/course.md
+- id: module-060
+  title: Understand and use CoreDNS
+  description: Planned coverage of this curriculum objective.
+  content:
+  - type: reading
+    title: Section Overview
+    path: sections/section-060/README.md
+  - type: reading
+    title: Understand and use CoreDNS
+    path: sections/section-060/module-01/course.md
