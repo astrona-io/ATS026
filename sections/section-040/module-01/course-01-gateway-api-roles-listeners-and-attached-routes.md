@@ -5,6 +5,20 @@ exam_objectives:
 ---
 # Gateway API Roles, Listeners And Attached Routes
 
+An HTTPRoute exists, but the Gateway listener does not allow its namespace to attach. Resource creation succeeded while the intended relationship was rejected.
+
+## Learning objectives
+
+- Distinguish infrastructure class, listener and route roles.
+- Evaluate namespace attachment and hostname relationships.
+- Explain backend references and ReferenceGrant permission.
+
+## Before you start
+
+This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+
+## Responsible components and behavior
+
 Gateway API is a collection of Kubernetes resource types for declaring traffic infrastructure and routing relationships. API means application programming interface. Its resources divide responsibilities among infrastructure configuration, a gateway's listeners and application routes. A compatible implementation must install and reconcile the relevant types before declarations provide an active traffic path.
 
 ## Separate The Resource Responsibilities
@@ -50,6 +64,29 @@ flowchart TB
     grant --> controller
     controller --> ready["Ready reachable application endpoints"]
 ```
+
+## Work through the decision
+
+Gateway API separates implementation selection, infrastructure entry points and application routes. GatewayClass identifies the controller contract; Gateway declares listeners; HTTPRoute declares matching and backend routing. Parent references request route attachment, while listener allowedRoutes determines permitted attachment scope.
+
+Read status conditions for the actual listener and route relationship. An accepted route can still have unresolved backend references, and a ready listener still needs reachable frontend infrastructure. Cross-namespace backend references require the applicable ReferenceGrant relationship where the API requires it. A grant for that reference is not an application permission or a network-policy allowance.
+
+```mermaid
+flowchart TB
+    N0["GatewayClass controller"]
+    N1["Gateway listener"]
+    N2["Allowed route attachment"]
+    N3["Resolved backend references"]
+    N4["Application request routing"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+```
+
+Gateway routing depends on accepted relationships and resolved references, not on the existence of each object alone.
+
+Gateway routing depends on accepted relationships and resolved references, not on the existence of each object alone.
 
 ## Common pitfalls
 
