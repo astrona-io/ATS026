@@ -5,7 +5,9 @@ exam_objectives:
 ---
 # Understand and use CoreDNS
 
-This section covers understand and use CoreDNS. You will study CoreDNS Configuration And Resolution Diagnosis. The lessons explain the responsible components, configuration relationships and failure cases relevant to application development.
+A Pod resolves public names but not a Service name, while another Pod cannot reach the resolver at all. These symptoms point to different DNS boundaries.
+
+The explanations identify the responsible components, compare intended and observed state, and work through the decisions needed to preserve the requirement. Read the worked examples as reasoning about a proposed system; no environment is started by this section.
 
 Each module begins with its goals and ends with a summary. Reusable YAML knowledge checks follow the section summary and are registered separately for future presentation.
 
