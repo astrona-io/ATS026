@@ -5,6 +5,20 @@ exam_objectives:
 ---
 # Pod Addresses And Network Implementation
 
+A Pod IP changes when the application is replaced, but the Service still provides the same access point. Pod addressing and Service forwarding are different network responsibilities. Understanding both helps localize a request failure.
+
+## Learning objectives
+
+- Explain Pod address and shared-network behavior.
+- Identify network implementation responsibilities.
+- Distinguish name resolution from destination connectivity.
+
+## Before you start
+
+This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+
+## Responsible components and behavior
+
 The `shuttle` Pod sends a request to the `probe` Pod on another node. Kubernetes gives Pods network identities so applications can communicate without needing to know which node hosts each process. Containers inside a normal Pod share its network namespace and can communicate through the local loopback address.
 
 The Kubernetes network model expects Pod-to-Pod communication across nodes without an application needing to translate its Pod address. The network implementation makes that model work through routing, encapsulation or other mechanisms. The details depend on the plugin, infrastructure and configured policy.
@@ -38,6 +52,25 @@ A Pod address identifies an instance. A Service address identifies a stable acce
 Replacement can change a Pod address while the Service address stays the same. This helps clients avoid tracking every lifecycle event. Long-lived connections can still point to a failed backend, so applications need appropriate reconnection and safe retries. Stable discovery does not make every established connection immortal.
 
 When explaining a failure, identify whether the client uses an instance address or a Service abstraction, whether the path crosses nodes and which component implements that path. Then consider traffic policy and the listener. These details turn a broad “networking is broken” symptom into a bounded question.
+
+## Work through the decision
+
+Internet Protocol (IP) addresses identify network destinations. A Pod receives its own network context and address through the cluster's network arrangement. The Container Network Interface (CNI) integration participates in connecting Pod networking. Service forwarding separately maps a Service address to backend addresses using the implementation installed in the cluster.
+
+Some platforms replace parts of the usual forwarding arrangement with another implementation. Therefore a correct explanation names the responsibility rather than assuming every cluster uses the same daemon or rule format. Direct Pod reachability tests one path; Service reachability includes selection and virtual-address forwarding too. A result from one cannot automatically establish the other.
+
+```mermaid
+flowchart TB
+    C["Client connection"] --> S["Service virtual address"]
+    S --> F["Service forwarding"]
+    F --> P["Backend Pod address"]
+    N["Pod network connectivity"] --> P
+    P --> A["Application process"]
+```
+
+Service forwarding selects a destination whose underlying Pod network must also provide connectivity.
+
+You can now distinguish network responsibilities and avoid hard-coding replaceable Pod addresses. Investigation should compare the actual caller path, selected endpoint and network implementation before changing cluster-wide settings.
 
 ## Common pitfalls
 

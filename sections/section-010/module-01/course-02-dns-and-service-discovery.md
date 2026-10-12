@@ -5,6 +5,20 @@ exam_objectives:
 ---
 # DNS And Service Discovery
 
+Egress isolation allows the destination Pod but blocks the resolver. The application cannot look up `probe`, so it never reaches the permitted backend connection. Dependencies include name resolution as well as the final Service.
+
+## Learning objectives
+
+- Explain Pod address and shared-network behavior.
+- Identify network implementation responsibilities.
+- Distinguish name resolution from destination connectivity.
+
+## Before you start
+
+This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+
+## Responsible components and behavior
+
 The `shuttle` application contacts a backend named `probe` instead of storing an individual Pod address. The Domain Name System (DNS) resolves names to network information. Kubernetes cluster DNS publishes Service records so clients can discover stable names for application access.
 
 A normal Service usually resolves to its virtual cluster address. Network forwarding then directs traffic to an eligible backend. A headless Service has no allocated cluster virtual address and can expose backend addresses through DNS. These patterns support different ways for clients to find endpoints.
@@ -32,6 +46,25 @@ A name lookup failure can mean the record is absent, the namespace is wrong or t
 These observations are not perfect diagnoses by themselves, but they narrow the stage. Compare the actual name queried, answer received and client context before changing cluster-wide DNS. A policy blocking DNS requests can break discovery even when the DNS service itself is healthy.
 
 Caching adds timing. Clients and resolvers can retain answers, and an application may reuse connections after discovery. A newly correct record does not guarantee every client immediately uses the new endpoint. Reliable behavior therefore combines meaningful names, suitable cache and connection handling, and verification from the caller experiencing the failure.
+
+## Work through the decision
+
+Domain Name System (DNS) resolution converts names into address information. In the same namespace, `probe` commonly resolves through the client's search path. In outpost, that short name first refers to outpost's scope; `probe.starfleet` identifies the intended Service namespace instead.
+
+Egress isolation must allow the actual resolver traffic required by the client's DNS configuration. DNS commonly uses User Datagram Protocol (UDP) and can also require Transmission Control Protocol (TCP). Allowing only one protocol can leave some lookups or fallback behavior failing. Resolver labels, addresses and forwarding arrangements depend on the provisioned cluster; inspect them rather than copying a production assumption into every policy.
+
+```mermaid
+flowchart TB
+    C["Client Service name"] --> D["Resolver network access"]
+    D --> N["DNS answer"]
+    N --> E["Backend egress allowance"]
+    E --> I["Destination ingress allowance"]
+    I --> A["Application listener"]
+```
+
+Allowing a backend is insufficient when the client cannot first reach the resolver needed to find it.
+
+You can now distinguish discovery dependency failure from backend connection failure. Verify each stage from the affected caller, including any DNS protocols and namespace naming rules its path requires.
 
 ## Common pitfalls
 
