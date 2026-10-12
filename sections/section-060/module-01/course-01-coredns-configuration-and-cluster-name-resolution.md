@@ -5,6 +5,20 @@ exam_objectives:
 ---
 # CoreDNS Configuration And Cluster Name Resolution
 
+A Pod resolves public names but not a Service name, while another Pod cannot reach the resolver at all. These symptoms point to different DNS boundaries.
+
+## Learning objectives
+
+- Explain Pod resolver settings and namespace search context.
+- Identify Corefile and plugin responsibilities.
+- Distinguish cluster lookup from upstream forwarding.
+
+## Before you start
+
+This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+
+## Responsible components and behavior
+
 CoreDNS is a DNS server commonly deployed to provide Kubernetes cluster name resolution. DNS means Domain Name System. Cluster naming helps applications discover Services and relevant endpoints, but the resolver, its configuration and the querying Pod's own DNS settings must form a usable path before a hostname becomes useful.
 
 ## The Query Path Has Several Parts
@@ -38,6 +52,29 @@ If only one namespace fails to resolve a short name, examine search domains and 
 A timeout means no usable answer arrived within the observer's limit, while a negative answer can mean the resolver reports the name does not exist under the queried context. These observations suggest different paths but still need server and client context. A policy that drops traffic can produce a timeout without proving that the resource name is absent.
 
 After correction, evaluate both the intended lookup and the following application connection. This distinguishes restored naming from useful service reachability. Preserve the cluster domain and plugin responsibilities in the explanation so a temporary working query is not mistaken for proof that every discovery dependency is healthy.
+
+## Work through the decision
+
+CoreDNS is a DNS server commonly used for Kubernetes cluster discovery. Its configuration can supply cluster records and forward other requests to upstream resolvers. The client also needs correct DNS policy and search behavior plus network access to that server.
+
+Separate record selection, resolver availability and upstream forwarding. A namespace-qualified Service name addresses client naming, not an unavailable resolver. An external lookup can fail through upstream forwarding while cluster discovery still works. Configuration changes can affect many workloads, so review the intended plugin behavior and verify representative internal and external queries before declaring a DNS repair complete.
+
+```mermaid
+flowchart TB
+    N0["Client DNS configuration"]
+    N1["Reachable CoreDNS"]
+    N2["Cluster record or upstream selection"]
+    N3["Resolution response"]
+    N4["Subsequent application connection"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+```
+
+Name resolution has its own client, server and upstream contracts and still does not establish backend health.
+
+Name resolution has its own client, server and upstream contracts and still does not establish backend health.
 
 ## Common pitfalls
 
