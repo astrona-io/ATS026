@@ -5,6 +5,20 @@ exam_objectives:
 ---
 # External Entry And Application Routing
 
+A Service of type LoadBalancer exists, but its external address stays unassigned. The object requests an integration that the platform must actually supply.
+
+## Learning objectives
+
+- Compare ClusterIP, NodePort and LoadBalancer responsibilities.
+- Trace Service and target port mapping.
+- Explain selected ready endpoints.
+
+## Before you start
+
+This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+
+## Responsible components and behavior
+
 A team wants browsers outside the cluster to reach `probe`. A NodePort Service exposes a port on node addresses through the cluster's Service implementation. An external client still needs network access to those node addresses. Firewall and infrastructure routing rules can prevent access even when the Service object exists.
 
 A LoadBalancer Service requests an external load balancer through an available implementation, often a cloud integration. A local cluster may have no implementation that provides an external address. Creating the resource does not automatically install a cloud load balancer or make one available on every platform.
@@ -38,6 +52,29 @@ GatewayClass identifies which controller handles a class of gateways. Infrastruc
 A route can be present but not accepted, or accepted but unable to resolve its backend references. Status conditions help distinguish those outcomes. Cross-namespace references can require explicit permission mechanisms, so a route pointing at another namespace is not automatically authorized merely because the object exists.
 
 For a proposed access method, list the client protocol, infrastructure capability, route owner and backend. Internal connectivity, public exposure and application routing are different requirements. The complete solution supplies the implementation and permissions that realize the declared access path, then verifies the request behavior from the intended external caller.
+
+## Work through the decision
+
+ClusterIP, NodePort and LoadBalancer describe different access arrangements. NodePort uses a supported port on eligible node networking, while LoadBalancer requests the environment's external-balancer integration. Neither starts the application listener or repairs an empty backend set.
+
+An Ingress or Gateway adds application routing through an appropriate controller and reachable frontend. External name resolution, firewall reachability, routing match and backend readiness are distinct dependencies. A port that answers does not prove the intended hostname and path reach the correct application. Verify the caller's actual path instead of treating one populated status field as end-to-end success.
+
+```mermaid
+flowchart TB
+    N0["External client address"]
+    N1["Provisioned entry point"]
+    N2["Application routing"]
+    N3["Service backend mapping"]
+    N4["Ready listener and response"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+```
+
+External access combines infrastructure and application routing contracts beyond the Service object itself.
+
+External access combines infrastructure and application routing contracts beyond the Service object itself.
 
 ## Common pitfalls
 

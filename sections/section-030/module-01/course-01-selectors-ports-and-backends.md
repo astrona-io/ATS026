@@ -5,6 +5,20 @@ exam_objectives:
 ---
 # Selectors, Ports And Backends
 
+The `probe` Service exposes port 80 while its selected application listens on port 8080. These ports describe two sides of forwarding. Correct labels cannot compensate for a target port that points to the wrong listener.
+
+## Learning objectives
+
+- Compare ClusterIP, NodePort and LoadBalancer responsibilities.
+- Trace Service and target port mapping.
+- Explain selected ready endpoints.
+
+## Before you start
+
+This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+
+## Responsible components and behavior
+
 The `probe` application has three Pods, and clients need one stable destination. A Service defines an access point and, for a selector-based Service, identifies backends by Pod labels. EndpointSlices store sets of network endpoints and related information, including readiness conditions used by forwarding implementations.
 
 A Service's `port` is the port exposed to clients. Its `targetPort` identifies the destination port on the backend. The application must actually listen at that destination. Changing the Service port does not reconfigure the application's listener.
@@ -32,6 +46,24 @@ EndpointSlices divide backend information into manageable records rather than re
 That distinction matters for databases or peer discovery. Publishing an endpoint is not the same as telling ordinary callers it can safely serve requests. An author should state which discovery and traffic behavior the application needs rather than assume every Service treats all endpoints identically.
 
 The stable Service abstraction helps absorb Pod replacement, but existing connections and application errors remain outside a promise of uninterrupted success. A complete explanation traces client port, selection, endpoint eligibility and destination listener. A healthy observation at one step cannot replace evidence at the next.
+
+## Work through the decision
+
+The Service selector requires both `app: probe` and `release: probe`. The EndpointSlice controller uses matching Pods and their readiness to build backend information. Its stored ports reflect target-port resolution, including named port references. The network implementation consumes those backends when routing Service connections.
+
+The named target `http` refers to the selected Pod's declared port 8080. That declaration does not open a socket. The Python process must actually listen at the expected address and port. If selection is empty, investigate labels; if selected Pods are unready, investigate health; if ready endpoints use the wrong destination port, investigate mapping and listener. These are distinct defects.
+
+```mermaid
+flowchart TB
+    C["Client port 80"] --> S["Service selector"]
+    S --> E["Ready EndpointSlice backends"]
+    E --> P["Resolved target port 8080"]
+    P --> L["Python listener"]
+```
+
+Selection identifies the backend population, while port mapping identifies where that population must listen.
+
+You can now explain the complete Service backend relationship. Its declared correctness is useful evidence, but actual application reachability and meaningful responses need caller-side verification.
 
 ## Common pitfalls
 
