@@ -1,18 +1,20 @@
-# ATS026 — CKA: Services & Networking
+# Services & Networking (ATS026)
 
-Preparation for the **Services & Networking** domain of **Certified Kubernetes Administrator (CKA)**.
-The published domain weight is **20%**. This repository belongs to
-the [ATP005 training path](https://github.com/astrona-io/ATP005).
+Certified Kubernetes Administrator (CKA): Services & Networking, worth 20% of the official curriculum. This course belongs to ATP005.
 
-**Status:** Preparation scaffold; content authoring has not started.
+Developed reading lessons explain configuration, component responsibility, worked reasoning and failure limits. Every section has an introduction, and every module ends with a summary. Reusable YAML knowledge checks are indexed separately. Technical content remains draft.
 
-The initial commit reserves the curriculum structure. Lessons, playgrounds,
-labs and assessments are planned and are not ready for learner use.
+## Course Outline
 
-See [CURRICULUM.md](CURRICULUM.md) for the objective map and authoring checklist,
-[astrona.yaml](astrona.yaml) for the course manifest, and
-[CLAUDE.md](CLAUDE.md) for writing and environment rules.
+| Section / module | Module | Teaching lessons |
+| --- | --- | --- |
+| 010 / 01 | Pod Addressing And Communication | Pod Addresses And Network Implementation; DNS And Service Discovery |
+| 020 / 01 | Traffic Isolation And Enforcing Implementations | Traffic Isolation And Allowed Peers; NetworkPolicy And Allowed Connections |
+| 030 / 01 | Service Types And Endpoint Relationships | Selectors, Ports And Backends; External Entry And Application Routing |
+| 040 / 01 | Gateway Classes, Listeners And Routes | Gateway API Roles, Listeners And Attached Routes |
+| 050 / 01 | Ingress Selection And Request Diagnosis | Matching Ingress Hosts, Paths And Service Backends; Tracing An External Request To The Application |
+| 060 / 01 | CoreDNS Configuration And Resolution Diagnosis | CoreDNS Configuration And Cluster Name Resolution |
 
-Curriculum source: [official CKA page](https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/), checked 2026-10-10.
-License: [Apache-2.0](LICENSE). Curriculum objectives retain attribution to
-The Linux Foundation and CNCF; see [CNCF curriculum licensing](https://github.com/cncf/curriculum).
+## Author Review
+
+The [curriculum map](CURRICULUM.md) records objective coverage. [Sources](SOURCES.md) support author review, and [assessment documentation](ASSESSMENTS.md) describes the reusable YAML contract. No runtime is required or claimed, and no new labs or playgrounds are included.

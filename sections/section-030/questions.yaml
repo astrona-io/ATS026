@@ -1,0 +1,111 @@
+schema_version: 1
+kind: question_bank
+id: ats026-section-030
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material; not official examination questions.
+scope:
+  type: section
+  id: section-030
+  title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+placement:
+  position: after
+  reading: sections/section-030/module-01/course-03-summary.md
+questions:
+- id: ats026-section-030-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain selected ready endpoints.
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: A Service selector matches no Pods. What is the likely relationship to examine?
+  options:
+  - id: a
+    text: The actual selector and Pod labels
+    explanation: Backend selection needs matching eligible resources.
+  - id: b
+    text: Only the image's EXPOSE declaration
+    explanation: Image port metadata does not add selector matches.
+  - id: c
+    text: Only the Secret's encoding
+    explanation: Data representation does not select Service backends.
+  correct_option: a
+  explanation: Backend selection needs matching eligible resources.
+- id: ats026-section-030-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Trace Service and target port mapping.
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: A Service exposes port 80 and targetPort 8080. Where must the backend process accept the selected
+    traffic?
+  options:
+  - id: a
+    text: Always at port 80 regardless of targetPort
+    explanation: That ignores the declared backend mapping.
+  - id: b
+    text: At a randomly assigned chart history port
+    explanation: Release history does not define that listener contract.
+  - id: c
+    text: At the resolved backend target port
+    explanation: The Service-facing port and backend listener serve different roles.
+  correct_option: c
+  explanation: The Service-facing port and backend listener serve different roles.
+- id: ats026-section-030-q03
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Compare ClusterIP, NodePort and LoadBalancer responsibilities.
+  source_readings:
+  - sections/section-030/module-01/course-02-external-entry-and-application-routing.md
+  prompt: Does a NodePort Service guarantee reachability from any outside client?
+  options:
+  - id: a
+    text: Yes; every node receives a new public DNS name automatically
+    explanation: NodePort does not universally provision public naming.
+  - id: b
+    text: No; routing, infrastructure and applicable controls still matter
+    explanation: The exposure type does not establish every client's network path.
+  - id: c
+    text: Yes; firewalls and node access become irrelevant
+    explanation: Infrastructure can still restrict traffic.
+  correct_option: b
+  explanation: The exposure type does not establish every client's network path.
+- id: ats026-section-030-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain selected ready endpoints.
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: A selected Pod is Running but unready. Why can Service access still fail?
+  options:
+  - id: a
+    text: Ordinary ready backend selection can exclude it
+    explanation: Running process state and endpoint readiness are different facts.
+  - id: b
+    text: Every Running Pod must receive public traffic
+    explanation: Selection, health and routing requirements remain.
+  - id: c
+    text: Readiness failure changes the image digest
+    explanation: Readiness does not rewrite the selected artifact.
+  correct_option: a
+  explanation: Running process state and endpoint readiness are different facts.
+- id: ats026-section-030-q05
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Trace Service and target port mapping.
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: Why check a meaningful request after correcting a Service selector?
+  options:
+  - id: a
+    text: Selectors guarantee every backend business operation
+    explanation: Selection is only one relationship.
+  - id: b
+    text: The test automatically creates missing volumes
+    explanation: An application request does not provision all absent dependencies.
+  - id: c
+    text: Correct selection does not prove port, policy and application behavior
+    explanation: The full intended path still needs appropriate verification.
+  correct_option: c
+  explanation: The full intended path still needs appropriate verification.
