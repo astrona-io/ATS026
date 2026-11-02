@@ -1,8 +1,9 @@
-# Preparation scaffold. Technical pages stay draft until authoring and review.
 training:
   id: ATS026
   title: 'CKA: Services & Networking'
-  description: Preparation scaffold for Services & Networking. Lessons and environments are planned.
+  description: Detailed reading lessons and reusable YAML knowledge checks covering
+    the CKA domain. No new labs or playgrounds. Technical content remains draft for
+    review.
   certification:
     name: Certified Kubernetes Administrator
     code: CKA
@@ -19,7 +20,7 @@ training:
 modules:
 - id: module-intro
   title: Introduction
-  description: Planned introduction and authoring status.
+  description: Audience, learning method, reading requirements and authoring process.
   content:
   - type: reading
     title: Introduction
@@ -35,61 +36,306 @@ modules:
     path: sections/intro/course-03-how-this-course-is-made.md
 - id: module-010
   title: Understand connectivity between Pods
-  description: Planned coverage of this curriculum objective.
+  description: Developed explanations and application reasoning for Understand connectivity
+    between Pods.
+  status: alpha
   content:
-  - type: reading
-    title: Section Overview
-    path: sections/section-010/README.md
   - type: reading
     title: Understand connectivity between Pods
+    path: sections/section-010/README.md
+  - type: reading
+    title: Pod Addressing And Communication
     path: sections/section-010/module-01/course.md
+  - type: reading
+    title: Pod Addresses And Network Implementation
+    path: sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  - type: reading
+    title: DNS And Service Discovery
+    path: sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  - type: reading
+    title: Trace DNS To A Service Address — Task
+    path: sections/section-010/module-01/labs/lab-01/question.md
+  - type: lab
+    title: Trace DNS To A Service Address
+    path: sections/section-010/module-01/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: dns-discovery
+    task_kind: build
+    learning_goals:
+    - Compare a resolved Service name with the actual ClusterIP and repeat the application
+      request.
+    tags:
+    - cka
+    - dns-discovery
+  - type: reading
+    title: Trace DNS To A Service Address — Solution
+    path: sections/section-010/module-01/labs/lab-01/solution.md
+  - type: reading
+    title: 'Guided Practice: Trace DNS To A Service Address'
+    path: sections/section-010/module-01/course-03-guided-practice.md
+  - type: reading
+    title: Summary
+    path: sections/section-010/module-01/course-04-summary.md
 - id: module-020
   title: Define and enforce Network Policies
-  description: Planned coverage of this curriculum objective.
+  description: Developed explanations and application reasoning for Define and enforce
+    Network Policies.
+  status: alpha
   content:
-  - type: reading
-    title: Section Overview
-    path: sections/section-020/README.md
   - type: reading
     title: Define and enforce Network Policies
+    path: sections/section-020/README.md
+  - type: reading
+    title: Traffic Isolation And Enforcing Implementations
     path: sections/section-020/module-01/course.md
+  - type: reading
+    title: Traffic Isolation And Allowed Peers
+    path: sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
+  - type: reading
+    title: Allow One Peer And Deny Another — Task
+    path: sections/section-020/module-01/labs/lab-01/question.md
+  - type: lab
+    title: Allow One Peer And Deny Another
+    path: sections/section-020/module-01/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: networkpolicy-ingress
+    task_kind: build
+    learning_goals:
+    - Enforce both an allowed same-namespace peer and a denied peer in another namespace.
+    tags:
+    - cka
+    - networkpolicy-ingress
+  - type: reading
+    title: Allow One Peer And Deny Another — Solution
+    path: sections/section-020/module-01/labs/lab-01/solution.md
+  - type: reading
+    title: NetworkPolicy And Allowed Connections
+    path: sections/section-020/module-01/course-02-networkpolicy-and-allowed-connections.md
+  - type: reading
+    title: Allow DNS And One Application Dependency — Task
+    path: sections/section-020/module-01/labs/lab-02/question.md
+  - type: lab
+    title: Allow DNS And One Application Dependency
+    path: sections/section-020/module-01/labs/lab-02
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: networkpolicy-egress
+    task_kind: build
+    learning_goals:
+    - Allow name resolution and application access while denying a healthy unrelated
+      listener.
+    tags:
+    - cka
+    - networkpolicy-egress
+  - type: reading
+    title: Allow DNS And One Application Dependency — Solution
+    path: sections/section-020/module-01/labs/lab-02/solution.md
+  - type: reading
+    title: 'Guided Practice: Allow One Peer And Deny Another'
+    path: sections/section-020/module-01/course-03-guided-practice.md
+  - type: reading
+    title: Summary
+    path: sections/section-020/module-01/course-04-summary.md
 - id: module-030
   title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
-  description: Planned coverage of this curriculum objective.
+  description: Developed explanations and application reasoning for Use ClusterIP,
+    NodePort, LoadBalancer service types and endpoints.
+  status: alpha
   content:
-  - type: reading
-    title: Section Overview
-    path: sections/section-030/README.md
   - type: reading
     title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+    path: sections/section-030/README.md
+  - type: reading
+    title: Service Types And Endpoint Relationships
     path: sections/section-030/module-01/course.md
+  - type: reading
+    title: Selectors, Ports And Backends
+    path: sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  - type: reading
+    title: Repair A Service Selector — Task
+    path: sections/section-030/module-01/labs/lab-01/question.md
+  - type: lab
+    title: Repair A Service Selector
+    path: sections/section-030/module-01/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: service-selector
+    task_kind: build
+    learning_goals:
+    - Restore backend selection while preserving the existing client and listener
+      ports.
+    tags:
+    - cka
+    - service-selector
+  - type: reading
+    title: Repair A Service Selector — Solution
+    path: sections/section-030/module-01/labs/lab-01/solution.md
+  - type: reading
+    title: External Entry And Application Routing
+    path: sections/section-030/module-01/course-02-external-entry-and-application-routing.md
+  - type: reading
+    title: Reach A Service Through Its NodePort — Task
+    path: sections/section-030/module-01/labs/lab-02/question.md
+  - type: lab
+    title: Reach A Service Through Its NodePort
+    path: sections/section-030/module-01/labs/lab-02
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: nodeport
+    task_kind: build
+    learning_goals:
+    - Verify the client port, backend listener and allocated node entry port separately.
+    tags:
+    - cka
+    - nodeport
+  - type: reading
+    title: Reach A Service Through Its NodePort — Solution
+    path: sections/section-030/module-01/labs/lab-02/solution.md
+  - type: reading
+    title: 'Guided Practice: Repair A Service Selector'
+    path: sections/section-030/module-01/course-03-guided-practice.md
+  - type: reading
+    title: Summary
+    path: sections/section-030/module-01/course-04-summary.md
 - id: module-040
   title: Use the Gateway API to manage Ingress traffic
-  description: Planned coverage of this curriculum objective.
+  description: Developed explanations and application reasoning for Use the Gateway
+    API to manage Ingress traffic.
+  status: alpha
   content:
-  - type: reading
-    title: Section Overview
-    path: sections/section-040/README.md
   - type: reading
     title: Use the Gateway API to manage Ingress traffic
+    path: sections/section-040/README.md
+  - type: reading
+    title: Gateway Classes, Listeners And Routes
     path: sections/section-040/module-01/course.md
+  - type: reading
+    title: Gateway API Roles, Listeners And Attached Routes
+    path: sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  - type: reading
+    title: Attach An HTTPRoute To A Gateway — Task
+    path: sections/section-040/module-01/labs/lab-01/question.md
+  - type: lab
+    title: Attach An HTTPRoute To A Gateway
+    path: sections/section-040/module-01/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: gateway-api
+    task_kind: build
+    learning_goals:
+    - Connect class, listener, route and backend and inspect controller acceptance.
+    tags:
+    - cka
+    - gateway-api
+  - type: reading
+    title: Attach An HTTPRoute To A Gateway — Solution
+    path: sections/section-040/module-01/labs/lab-01/solution.md
+  - type: reading
+    title: 'Guided Practice: Attach An HTTPRoute To A Gateway'
+    path: sections/section-040/module-01/course-02-guided-practice.md
+  - type: reading
+    title: Summary
+    path: sections/section-040/module-01/course-03-summary.md
 - id: module-050
   title: Know how to use Ingress controllers and Ingress resources
-  description: Planned coverage of this curriculum objective.
+  description: Developed explanations and application reasoning for Know how to use
+    Ingress controllers and Ingress resources.
+  status: alpha
   content:
-  - type: reading
-    title: Section Overview
-    path: sections/section-050/README.md
   - type: reading
     title: Know how to use Ingress controllers and Ingress resources
+    path: sections/section-050/README.md
+  - type: reading
+    title: Ingress Selection And Request Diagnosis
     path: sections/section-050/module-01/course.md
+  - type: reading
+    title: Matching Ingress Hosts, Paths And Service Backends
+    path: sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+  - type: reading
+    title: Route A Matching Host Through Ingress — Task
+    path: sections/section-050/module-01/labs/lab-01/question.md
+  - type: lab
+    title: Route A Matching Host Through Ingress
+    path: sections/section-050/module-01/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: ingress-routing
+    task_kind: build
+    learning_goals:
+    - Verify host matching and backend routing through the controller.
+    tags:
+    - cka
+    - ingress-routing
+  - type: reading
+    title: Route A Matching Host Through Ingress — Solution
+    path: sections/section-050/module-01/labs/lab-01/solution.md
+  - type: reading
+    title: Tracing An External Request To The Application
+    path: sections/section-050/module-01/course-02-tracing-an-external-request-to-the-application.md
+  - type: reading
+    title: Verify TLS Termination And Server Identity — Task
+    path: sections/section-050/module-01/labs/lab-02/question.md
+  - type: lab
+    title: Verify TLS Termination And Server Identity
+    path: sections/section-050/module-01/labs/lab-02
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: ingress-tls
+    task_kind: build
+    learning_goals:
+    - Route HTTPS through the controller and verify both matching and mismatched certificate
+      identities.
+    tags:
+    - cka
+    - ingress-tls
+  - type: reading
+    title: Verify TLS Termination And Server Identity — Solution
+    path: sections/section-050/module-01/labs/lab-02/solution.md
+  - type: reading
+    title: 'Guided Practice: Route A Matching Host Through Ingress'
+    path: sections/section-050/module-01/course-03-guided-practice.md
+  - type: reading
+    title: Summary
+    path: sections/section-050/module-01/course-04-summary.md
 - id: module-060
   title: Understand and use CoreDNS
-  description: Planned coverage of this curriculum objective.
+  description: Developed explanations and application reasoning for Understand and
+    use CoreDNS.
+  status: alpha
   content:
   - type: reading
-    title: Section Overview
+    title: Understand and use CoreDNS
     path: sections/section-060/README.md
   - type: reading
-    title: Understand and use CoreDNS
+    title: CoreDNS Configuration And Resolution Diagnosis
     path: sections/section-060/module-01/course.md
+  - type: reading
+    title: CoreDNS Configuration And Cluster Name Resolution
+    path: sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  - type: reading
+    title: Restore A Broken CoreDNS Configuration — Task
+    path: sections/section-060/module-01/labs/lab-01/question.md
+  - type: lab
+    title: Restore A Broken CoreDNS Configuration
+    path: sections/section-060/module-01/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: coredns-repair
+    task_kind: build
+    learning_goals:
+    - Trace failed name resolution to a Corefile syntax error and restore the saved
+      configuration.
+    tags:
+    - cka
+    - coredns-repair
+  - type: reading
+    title: Restore A Broken CoreDNS Configuration — Solution
+    path: sections/section-060/module-01/labs/lab-01/solution.md
+  - type: reading
+    title: 'Guided Practice: Restore A Broken CoreDNS Configuration'
+    path: sections/section-060/module-01/course-02-guided-practice.md
+  - type: reading
+    title: Summary
+    path: sections/section-060/module-01/course-03-summary.md

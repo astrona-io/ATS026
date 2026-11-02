@@ -1,0 +1,111 @@
+schema_version: 1
+kind: question_bank
+id: ats026-section-010
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material; not official examination questions.
+scope:
+  type: section
+  id: section-010
+  title: Understand connectivity between Pods
+placement:
+  position: after
+  reading: sections/section-010/module-01/course-03-summary.md
+questions:
+- id: ats026-section-010-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain Pod address and shared-network behavior.
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: Two ordinary containers share a Pod. What network relationship applies?
+  options:
+  - id: a
+    text: They share the Pod network namespace
+    explanation: Local addresses and ports are shared under that arrangement.
+  - id: b
+    text: Each always receives a fully independent Pod IP
+    explanation: Ordinary containers in one Pod do not have that separate identity.
+  - id: c
+    text: A Service is automatically created for each container
+    explanation: Pod grouping does not declare those access objects.
+  correct_option: a
+  explanation: Local addresses and ports are shared under that arrangement.
+- id: ats026-section-010-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Identify network implementation responsibilities.
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: Pod addresses exist, but cross-node traffic fails. What should be reviewed?
+  options:
+  - id: a
+    text: Only the application's course title
+    explanation: Documentation naming does not route packets.
+  - id: b
+    text: Only the number of Secret keys
+    explanation: Configuration key count does not establish network paths.
+  - id: c
+    text: The selected network implementation and actual routing path
+    explanation: Address allocation alone does not prove data-path connectivity.
+  correct_option: c
+  explanation: Address allocation alone does not prove data-path connectivity.
+- id: ats026-section-010-q03
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Distinguish name resolution from destination connectivity.
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: A short Service name works in one namespace but refers to another resource elsewhere. What is
+    relevant?
+  options:
+  - id: a
+    text: A chart version always overrides DNS answers
+    explanation: Package metadata does not define resolver search scope.
+  - id: b
+    text: Namespace search context and actual resource identity
+    explanation: Short names are interpreted under a resolver context.
+  - id: c
+    text: All short names are globally unique by definition
+    explanation: Namespaces can contain similarly named Services.
+  correct_option: b
+  explanation: Short names are interpreted under a resolver context.
+- id: ats026-section-010-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Diagnose listener, address and routing assumptions.
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: An application binds only to loopback in its Pod. Which expectation is unsafe?
+  options:
+  - id: a
+    text: Assuming any remote Pod can reach that listener through the Pod address
+    explanation: Listener binding must fit the intended network target.
+  - id: b
+    text: Another container in the same Pod may use the shared local path
+    explanation: That can be valid under the shared network relationship.
+  - id: c
+    text: The actual address and port should be inspected
+    explanation: Those observations are relevant to diagnosis.
+  correct_option: a
+  explanation: Listener binding must fit the intended network target.
+- id: ats026-section-010-q05
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Diagnose listener, address and routing assumptions.
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: Does a successful DNS answer prove a backend is ready?
+  options:
+  - id: a
+    text: Yes; resolver success marks all containers healthy
+    explanation: DNS does not supply that readiness action.
+  - id: b
+    text: Yes; every port becomes reachable after lookup
+    explanation: Connection and policy constraints remain.
+  - id: c
+    text: No; discovery and application capacity are separate
+    explanation: The answer does not establish usable selected endpoints or process behavior.
+  correct_option: c
+  explanation: The answer does not establish usable selected endpoints or process behavior.

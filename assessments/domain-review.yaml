@@ -1,0 +1,112 @@
+schema_version: 1
+kind: question_bank
+id: ats026-domain-review
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material; not official examination questions.
+scope:
+  type: domain
+  id: domain-review
+  title: Services & Networking
+placement:
+  position: after
+  reading: sections/section-060/module-01/course-02-summary.md
+questions:
+- id: ats026-domain-review-q01
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Distinguish name resolution from destination connectivity.
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: A Service name resolves in one namespace but the same short name is used from another. What
+    must be checked?
+  options:
+  - id: a
+    text: The search context and intended namespaced resource
+    explanation: Short-name interpretation can select another destination.
+  - id: b
+    text: A guarantee that both names mean the same object
+    explanation: Namespaces can distinguish similarly named resources.
+  - id: c
+    text: Only the container's memory limit
+    explanation: Memory allowance does not choose the name scope.
+  correct_option: a
+  explanation: Short-name interpretation can select another destination.
+- id: ats026-domain-review-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain directional selection and additive allowances.
+  source_readings:
+  - sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
+  prompt: Why can a declared restrictive policy still fail to isolate traffic?
+  options:
+  - id: a
+    text: Policy labels encrypt every connection automatically
+    explanation: Isolation declarations are not universal encryption.
+  - id: b
+    text: A running controller always proves all networking rules
+    explanation: Process state is insufficient proof of enforcement.
+  - id: c
+    text: The implementation must actually enforce its supported semantics
+    explanation: API declaration and packet behavior are separate evidence.
+  correct_option: c
+  explanation: API declaration and packet behavior are separate evidence.
+- id: ats026-domain-review-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Trace Service and target port mapping.
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: A Service port is correct but targetPort is wrong. Which stage can fail?
+  options:
+  - id: a
+    text: Every datastore quorum operation
+    explanation: The stated fault concerns traffic forwarding.
+  - id: b
+    text: The Service-to-backend listener connection
+    explanation: The externally exposed contract does not fix an incorrect internal mapping.
+  - id: c
+    text: API discovery of unrelated storage types
+    explanation: Discovery is not the demonstrated port failure.
+  correct_option: b
+  explanation: The externally exposed contract does not fix an incorrect internal mapping.
+- id: ats026-domain-review-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain backend references and ReferenceGrant permission.
+  source_readings:
+  - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  prompt: A route may attach to a Gateway but lacks permission to use a backend in another namespace.
+    What distinction matters?
+  options:
+  - id: a
+    text: Attachment permission and backend-reference permission are separate
+    explanation: One allowed relationship does not authorize every cross-namespace target.
+  - id: b
+    text: Attachment always authorizes all target namespaces
+    explanation: That discards the reference boundary.
+  - id: c
+    text: A class name automatically grants every resource permission
+    explanation: Implementation selection is not universal backend authorization.
+  correct_option: a
+  explanation: One allowed relationship does not authorize every cross-namespace target.
+- id: ats026-domain-review-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Distinguish cluster lookup from upstream forwarding.
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: Cluster-local DNS works but external lookup times out. Which path needs investigation?
+  options:
+  - id: a
+    text: Only the Service's report-format configuration
+    explanation: Application formatting does not forward upstream DNS.
+  - id: b
+    text: Only datastore quorum arithmetic
+    explanation: The stated resolver symptom needs its own path evidence.
+  - id: c
+    text: Forwarding configuration, upstream access and relevant network controls
+    explanation: Local and external queries have different resolver dependencies.
+  correct_option: c
+  explanation: Local and external queries have different resolver dependencies.

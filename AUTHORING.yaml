@@ -1,0 +1,161 @@
+version: 1
+approval: CKA requested 2026-10-11; established reading-only scope
+course:
+  id: ATS026
+  certification:
+    name: Certified Kubernetes Administrator
+    code: CKA
+    provider: CNCF / Linux Foundation
+    domain: Services & Networking
+    weight: 20
+    competencies:
+    - Understand connectivity between Pods
+    - Define and enforce Network Policies
+    - Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+    - Use the Gateway API to manage Ingress traffic
+    - Know how to use Ingress controllers and Ingress resources
+    - Understand and use CoreDNS
+defaults:
+  playground: false
+  module_lab: false
+  capstone: false
+  section_quiz: true
+  final_quiz: true
+assessment_format: YAML question banks, schema version 1; indexed in assessments/index.yaml
+sections:
+- id: section-010
+  title: Understand connectivity between Pods
+  curriculum_item: Understand connectivity between Pods
+  capstone: false
+  section_quiz: true
+  modules:
+  - id: module-01
+    title: Pod Addressing And Communication
+    objectives:
+    - Explain Pod address and shared-network behavior.
+    - Identify network implementation responsibilities.
+    - Distinguish name resolution from destination connectivity.
+    - Diagnose listener, address and routing assumptions.
+    outline:
+    - Pod Addresses And Network Implementation
+    - DNS And Service Discovery
+    playground: false
+    module_lab: false
+    sources:
+    - reading: sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+      adapted_from: ATS038/sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+    - reading: sections/section-010/module-01/course-02-dns-and-service-discovery.md
+      adapted_from: ATS038/sections/section-010/module-01/course-02-dns-and-service-discovery.md
+- id: section-020
+  title: Define and enforce Network Policies
+  curriculum_item: Define and enforce Network Policies
+  capstone: false
+  section_quiz: true
+  modules:
+  - id: module-01
+    title: Traffic Isolation And Enforcing Implementations
+    objectives:
+    - Explain directional selection and additive allowances.
+    - Interpret peer selectors and ports.
+    - Identify required discovery and backend dependencies.
+    - Distinguish declaration from demonstrated enforcement.
+    outline:
+    - Traffic Isolation And Allowed Peers
+    - NetworkPolicy And Allowed Connections
+    playground: false
+    module_lab: false
+    sources:
+    - reading: sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
+      adapted_from: ATS043/sections/section-080/module-01/course-01-traffic-isolation-and-allowed-peers.md
+    - reading: sections/section-020/module-01/course-02-networkpolicy-and-allowed-connections.md
+      adapted_from: ATS038/sections/section-010/module-03/course-01-networkpolicy-and-allowed-connections.md
+- id: section-030
+  title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+  curriculum_item: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+  capstone: false
+  section_quiz: true
+  modules:
+  - id: module-01
+    title: Service Types And Endpoint Relationships
+    objectives:
+    - Compare ClusterIP, NodePort and LoadBalancer responsibilities.
+    - Trace Service and target port mapping.
+    - Explain selected ready endpoints.
+    - Evaluate external infrastructure and source-path assumptions.
+    outline:
+    - Selectors, Ports And Backends
+    - External Entry And Application Routing
+    playground: false
+    module_lab: false
+    sources:
+    - reading: sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+      adapted_from: ATS038/sections/section-010/module-02/course-01-selectors-ports-and-backends.md
+    - reading: sections/section-030/module-01/course-02-external-entry-and-application-routing.md
+      adapted_from: ATS038/sections/section-010/module-02/course-02-external-entry-and-application-routing.md
+- id: section-040
+  title: Use the Gateway API to manage Ingress traffic
+  curriculum_item: Use the Gateway API to manage Ingress traffic
+  capstone: false
+  section_quiz: true
+  modules:
+  - id: module-01
+    title: Gateway Classes, Listeners And Routes
+    objectives:
+    - Distinguish infrastructure class, listener and route roles.
+    - Evaluate namespace attachment and hostname relationships.
+    - Explain backend references and ReferenceGrant permission.
+    - Interpret acceptance, programming and reference conditions.
+    outline:
+    - Gateway API Roles, Listeners And Attached Routes
+    playground: false
+    module_lab: false
+    sources:
+    - reading: sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+      adapted_from: null
+    diagrams:
+    - type: flowchart
+      reading: sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+      purpose: Show the component dependencies described in this lesson.
+- id: section-050
+  title: Know how to use Ingress controllers and Ingress resources
+  curriculum_item: Know how to use Ingress controllers and Ingress resources
+  capstone: false
+  section_quiz: true
+  modules:
+  - id: module-01
+    title: Ingress Selection And Request Diagnosis
+    objectives:
+    - Identify controller class and entry-point requirements.
+    - Compare host and path matching rules.
+    - Trace Service backend ports and TLS behavior.
+    - Distinguish route fallback from application failure.
+    outline:
+    - Matching Ingress Hosts, Paths And Service Backends
+    - Tracing An External Request To The Application
+    playground: false
+    module_lab: false
+    sources:
+    - reading: sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+      adapted_from: ATS030/sections/section-030/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+    - reading: sections/section-050/module-01/course-02-tracing-an-external-request-to-the-application.md
+      adapted_from: ATS030/sections/section-030/module-02/course-01-tracing-an-external-request-to-the-application.md
+- id: section-060
+  title: Understand and use CoreDNS
+  curriculum_item: Understand and use CoreDNS
+  capstone: false
+  section_quiz: true
+  modules:
+  - id: module-01
+    title: CoreDNS Configuration And Resolution Diagnosis
+    objectives:
+    - Explain Pod resolver settings and namespace search context.
+    - Identify Corefile and plugin responsibilities.
+    - Distinguish cluster lookup from upstream forwarding.
+    - Diagnose resolver endpoints, permissions and network dependencies.
+    outline:
+    - CoreDNS Configuration And Cluster Name Resolution
+    playground: false
+    module_lab: false
+    sources:
+    - reading: sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+      adapted_from: null

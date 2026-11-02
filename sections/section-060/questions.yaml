@@ -1,0 +1,110 @@
+schema_version: 1
+kind: question_bank
+id: ats026-section-060
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material; not official examination questions.
+scope:
+  type: section
+  id: section-060
+  title: Understand and use CoreDNS
+placement:
+  position: after
+  reading: sections/section-060/module-01/course-02-summary.md
+questions:
+- id: ats026-section-060-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain Pod resolver settings and namespace search context.
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: Why inspect a Pod's resolver and search configuration?
+  options:
+  - id: a
+    text: It determines the query path and short-name context
+    explanation: Client settings influence which name and server are used.
+  - id: b
+    text: All clusters always use exactly the same domain suffix
+    explanation: The cluster domain is configurable.
+  - id: c
+    text: A Service name alone specifies every upstream server
+    explanation: Naming does not define the entire resolver path.
+  correct_option: a
+  explanation: Client settings influence which name and server are used.
+- id: ats026-section-060-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Identify Corefile and plugin responsibilities.
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: Which CoreDNS responsibility handles ordinary Kubernetes resource names?
+  options:
+  - id: a
+    text: Only external forwarding
+    explanation: Forwarding upstream is a different responsibility.
+  - id: b
+    text: The container runtime's image cache
+    explanation: Artifact caching does not serve cluster DNS schemas.
+  - id: c
+    text: Its configured Kubernetes plugin under the applicable zone
+    explanation: The plugin uses cluster observations for supported answers.
+  correct_option: c
+  explanation: The plugin uses cluster observations for supported answers.
+- id: ats026-section-060-q03
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Distinguish cluster lookup from upstream forwarding.
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: Cluster-local names work but external lookups fail. Which area is relevant?
+  options:
+  - id: a
+    text: Only the Deployment's annotation count
+    explanation: Annotation count does not establish upstream reachability.
+  - id: b
+    text: Upstream forwarding and its connectivity
+    explanation: Different query classes can depend on different resolver paths.
+  - id: c
+    text: Only claim reclaim policy
+    explanation: Storage deletion behavior does not forward DNS queries.
+  correct_option: b
+  explanation: Different query classes can depend on different resolver paths.
+- id: ats026-section-060-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Diagnose resolver endpoints, permissions and network dependencies.
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: CoreDNS runs but its DNS Service has no usable endpoints. What can happen?
+  options:
+  - id: a
+    text: Clients cannot reach useful resolver capacity through that Service
+    explanation: Process existence and Service endpoint selection are separate.
+  - id: b
+    text: Every DNS name is automatically copied into the API server
+    explanation: The failure does not create a replacement resolver.
+  - id: c
+    text: The application's image digest becomes invalid
+    explanation: DNS endpoints do not alter artifact content.
+  correct_option: a
+  explanation: Process existence and Service endpoint selection are separate.
+- id: ats026-section-060-q05
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Diagnose resolver endpoints, permissions and network dependencies.
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: What does a lookup timeout prove most directly?
+  options:
+  - id: a
+    text: The resolver definitely returned a negative answer
+    explanation: A timeout differs from a received negative response.
+  - id: b
+    text: The backend application successfully processed a request
+    explanation: Lookup timeout is not useful business-operation evidence.
+  - id: c
+    text: No usable answer arrived within the observer's limit
+    explanation: It does not universally prove that the queried resource name is absent.
+  correct_option: c
+  explanation: It does not universally prove that the queried resource name is absent.
