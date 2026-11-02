@@ -1,0 +1,57 @@
+{
+  "context": "kind-astro-ats-026-lab-060-01-01",
+  "resources": [
+    {
+      "kind": "configmap",
+      "name": "dns-repair",
+      "namespace": "starfleet",
+      "expected": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "dns-repair",
+          "namespace": "starfleet"
+        },
+        "data": {
+          "result": "restored"
+        }
+      }
+    }
+  ],
+  "behavior": [
+    {
+      "args": [
+        "kubectl",
+        "-n",
+        "starfleet",
+        "exec",
+        "shuttle",
+        "--",
+        "nslookup",
+        "probe.starfleet.svc.cluster.local"
+      ],
+      "contains": [
+        "Address"
+      ]
+    },
+    {
+      "args": [
+        "kubectl",
+        "-n",
+        "starfleet",
+        "exec",
+        "shuttle",
+        "--",
+        "wget",
+        "-q",
+        "-T",
+        "3",
+        "-O-",
+        "http://probe/"
+      ],
+      "contains": [
+        "version=v1"
+      ]
+    }
+  ]
+}

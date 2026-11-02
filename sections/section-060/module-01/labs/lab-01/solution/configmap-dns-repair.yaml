@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns-repair
+  namespace: starfleet
+data:
+  result: restored
