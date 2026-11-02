@@ -38,7 +38,7 @@ modules:
   title: Understand connectivity between Pods
   description: Developed explanations and application reasoning for Understand connectivity
     between Pods.
-  status: alpha
+  maturity: alpha
   content:
   - type: reading
     title: Understand connectivity between Pods
@@ -81,7 +81,7 @@ modules:
   title: Define and enforce Network Policies
   description: Developed explanations and application reasoning for Define and enforce
     Network Policies.
-  status: alpha
+  maturity: alpha
   content:
   - type: reading
     title: Define and enforce Network Policies
@@ -142,7 +142,7 @@ modules:
   title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
   description: Developed explanations and application reasoning for Use ClusterIP,
     NodePort, LoadBalancer service types and endpoints.
-  status: alpha
+  maturity: alpha
   content:
   - type: reading
     title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
@@ -203,7 +203,7 @@ modules:
   title: Use the Gateway API to manage Ingress traffic
   description: Developed explanations and application reasoning for Use the Gateway
     API to manage Ingress traffic.
-  status: alpha
+  maturity: alpha
   content:
   - type: reading
     title: Use the Gateway API to manage Ingress traffic
@@ -242,7 +242,7 @@ modules:
   title: Know how to use Ingress controllers and Ingress resources
   description: Developed explanations and application reasoning for Know how to use
     Ingress controllers and Ingress resources.
-  status: alpha
+  maturity: alpha
   content:
   - type: reading
     title: Know how to use Ingress controllers and Ingress resources
@@ -303,7 +303,7 @@ modules:
   title: Understand and use CoreDNS
   description: Developed explanations and application reasoning for Understand and
     use CoreDNS.
-  status: alpha
+  maturity: alpha
   content:
   - type: reading
     title: Understand and use CoreDNS
