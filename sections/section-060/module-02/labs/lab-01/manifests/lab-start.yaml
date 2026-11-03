@@ -1,0 +1,210 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: starfleet
+  labels:
+    team: starfleet
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+  labels:
+    team: outpost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+  template:
+    metadata:
+      labels:
+        app: probe
+    spec:
+      containers:
+        - name: probe
+          image: mccutchen/go-httpbin:2.25.0
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  selector:
+    app: probe
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bridge
+  namespace: starfleet
+  labels:
+    app: bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bridge
+  template:
+    metadata:
+      labels:
+        app: bridge
+    spec:
+      containers:
+        - name: bridge
+          image: nginx:1.31.6-alpine
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bridge
+  namespace: starfleet
+spec:
+  selector:
+    app: bridge
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shuttle
+  namespace: starfleet
+  labels:
+    app: shuttle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shuttle
+  template:
+    metadata:
+      labels:
+        app: shuttle
+    spec:
+      containers:
+        - name: shuttle
+          image: busybox:1.37.0
+          command: ["sh", "-c", "while true; do sleep 30; done"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 8Mi
+            limits:
+              memory: 32Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: partner-dns-corefile
+  namespace: starfleet
+data:
+  Corefile: |
+    .:1053 {
+        errors
+        ready
+        hosts {
+            192.0.2.10 relic.partner.example
+            192.0.2.11 vault.partner.example
+            fallthrough
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner-dns
+  namespace: starfleet
+  labels:
+    app: partner-dns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: partner-dns
+  template:
+    metadata:
+      labels:
+        app: partner-dns
+    spec:
+      containers:
+        - name: coredns
+          image: coredns/coredns:1.12.0
+          args: ["-conf", "/etc/coredns/Corefile"]
+          ports:
+            - name: dns-udp
+              containerPort: 1053
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 1053
+              protocol: TCP
+            - name: ready
+              containerPort: 8181
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8181
+          volumeMounts:
+            - name: corefile
+              mountPath: /etc/coredns
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: corefile
+          configMap:
+            name: partner-dns-corefile
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: partner-dns
+  namespace: starfleet
+spec:
+  selector:
+    app: partner-dns
+  ports:
+    - name: dns-udp
+      port: 53
+      protocol: UDP
+      targetPort: dns-udp
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: dns-tcp

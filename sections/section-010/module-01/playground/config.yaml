@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Pod Addressing And Communication (PLAYGROUND). Clean environment for free exploration: no task, no grading.
+# Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-playground-010-01
+  docs:
+    guide: docs/overview.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  manifests:
+    - name: starfleet
+      type: file
+      source: manifests/lab-start.yaml
+  waitFor:
+    - resource: deploy/scout
+      namespace: starfleet
+    - resource: deploy/probe
+      namespace: starfleet
+    - resource: deploy/shuttle
+      namespace: starfleet
+    - resource: deploy/bridge
+      namespace: starfleet
+    - resource: deploy/probe
+      namespace: outpost
+    - resource: deploy/drifter
+      namespace: outpost
+
+teardown:
+  keepCluster: false

@@ -5,15 +5,14 @@ exam_objectives:
 ---
 # Understand connectivity between Pods
 
-A Pod IP changes when the application is replaced, but the Service still provides the same access point. Pod addressing and Service forwarding are different network responsibilities. Understanding both helps localize a request failure.
+A Pod IP changes when the application is replaced, but a Service still provides the same access point. Pod addressing and Service forwarding are different network responsibilities. Knowing both lets you place a request failure in one named layer: the name, the address, the listener, the Service, a policy or the route between nodes.
 
-The explanations identify the responsible components, compare intended and observed state, and work through the decisions needed to preserve the requirement. Read the worked examples as reasoning about a proposed system; no environment is started by this section.
-
-Each module begins with its goals and ends with a summary. Reusable YAML knowledge checks follow the section summary and are registered separately for future presentation.
+This section has two modules and a capstone. The first module explains where Pod addresses come from, which component carries traffic between nodes and how a Service name becomes an address. The second module gives a fixed order of checks and the tools that run them, then walks through the common causes of a failed request and shows how each one looks at the client. Each module has its own playground for free practice and a graded lab. The capstone is a graded lab in which three workloads in one cluster are unreachable for three different reasons. A knowledge check of 12 questions closes the section.
 
 ## Learning Outcomes
 
 - Explain Pod address and shared-network behavior.
 - Identify network implementation responsibilities.
 - Distinguish name resolution from destination connectivity.
-- Diagnose listener, address and routing assumptions.
+- Diagnose listener, address, port and selector faults with ordered checks.
+- Use `kubectl debug` and EndpointSlices to prove a cause before changing anything.

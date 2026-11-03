@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Route With The Default Class, Path Types And A Default Backend (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-050-02-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - docker.io/library/traefik:v3.6.1
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the controller, the backends and the client
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: default-class
+      description: "The IngressClass traefik is the only default class"
+      type: file
+      source: validation/validate-default-class.sh
+      hint: "A default class needs the annotation ingressclass.kubernetes.io/is-default-class set to \"true\" on the IngressClass. Mark only traefik, not legacy."
+    - name: class-assigned
+      description: "The Ingress fleet has no class in its manifest but the API server stored the class traefik"
+      type: file
+      source: validation/validate-class-assigned.sh
+      hint: "The default class is only assigned when an Ingress is created. Mark the class first, then create the Ingress without ingressClassName. If fleet already exists with no class, delete it and create it again."
+    - name: scout-prefix
+      description: "Host fleet.local with a path under /scout reaches scout"
+      type: file
+      source: validation/validate-scout-prefix.sh
+      hint: "Use a Prefix path /scout with the backend Service scout on port 80."
+    - name: probe-prefix
+      description: "Host fleet.local with a path under /probe reaches probe"
+      type: file
+      source: validation/validate-probe-prefix.sh
+      hint: "Use a Prefix path /probe with the backend Service probe on port 80."
+    - name: bridge-exact
+      description: "The Exact path /bridge reaches bridge and a longer path does not"
+      type: file
+      source: validation/validate-bridge-exact.sh
+      hint: "Use pathType Exact for /bridge. A request for /bridge/extra must not reach bridge."
+    - name: default-backend
+      description: "A path that no rule matches reaches fallback through spec.defaultBackend"
+      type: file
+      source: validation/validate-default-backend.sh
+      hint: "Set spec.defaultBackend.service to the Service fallback on port 80 in the same Ingress."
+    - name: workloads-unchanged
+      description: "The controller, the backends and the Services are unchanged"
+      type: file
+      source: validation/validate-workloads-unchanged.sh
+      hint: "Do not edit the Deployments or Services. Only the IngressClass and the Ingress change."
+
+teardown:
+  keepCluster: false

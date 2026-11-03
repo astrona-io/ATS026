@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Customise And Debug CoreDNS (PLAYGROUND). Clean environment for free exploration: no task, no grading.
+# Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-playground-060-02
+  docs:
+    guide: docs/overview.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - busybox:1.37.0
+      - coredns/coredns:1.12.0
+      - mccutchen/go-httpbin:2.25.0
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  manifests:
+    - name: starfleet
+      type: file
+      source: manifests/lab-start.yaml
+  waitFor:
+    - resource: deploy/probe
+      namespace: starfleet
+    - resource: deploy/bridge
+      namespace: starfleet
+    - resource: deploy/shuttle
+      namespace: starfleet
+    - resource: deploy/partner-dns
+      namespace: starfleet
+    - resource: statefulset/crew
+      namespace: starfleet
+
+teardown:
+  keepCluster: false

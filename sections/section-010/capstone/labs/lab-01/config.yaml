@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Understand Connectivity Between Pods Capstone (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-010-capstone
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and the faults
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: signal-answers
+      description: "The signal Service answers HTTP 200 from the drifter client in outpost"
+      type: file
+      source: validation/validate-signal-answers.sh
+      hint: "A refused connection points at the listener. Read the signal-conf ConfigMap and check which address the server listens on."
+    - name: signal-pod-ip
+      description: "The signal Pod answers on its Pod IP, not only on the loopback address"
+      type: file
+      source: validation/validate-signal-pod-ip.sh
+      hint: "Request the Pod IP directly. The server must listen on all addresses, and NGINX reads its configuration only at start."
+    - name: lantern-answers
+      description: "The lantern Service answers HTTP 200 from the drifter client in outpost"
+      type: file
+      source: validation/validate-lantern-answers.sh
+      hint: "Compare the Service targetPort with the port the lantern container really listens on."
+    - name: dock-answers
+      description: "The dock Service answers HTTP 200 from the drifter client in outpost"
+      type: file
+      source: validation/validate-dock-answers.sh
+      hint: "A timeout with a correct port points at an empty Service. List the EndpointSlices of the Service."
+    - name: dock-has-endpoint
+      description: "The dock Service has at least one ready endpoint"
+      type: file
+      source: validation/validate-dock-has-endpoint.sh
+      hint: "Compare the Service selector with the labels of the dock Pod, letter by letter."
+    - name: service-contract-kept
+      description: "The Services keep port 80 and their forwarding ports: signal 8080, dock 9898"
+      type: file
+      source: validation/validate-service-contract-kept.sh
+      hint: "Fix the cause, not the client contract: clients keep using port 80."
+    - name: images-unchanged
+      description: "The container images of signal, lantern and dock are unchanged"
+      type: file
+      source: validation/validate-images-unchanged.sh
+      hint: "Do not replace the workloads; repair the configuration."
+    - name: no-networkpolicy
+      description: "No NetworkPolicy was created to work around a fault"
+      type: file
+      source: validation/validate-no-networkpolicy.sh
+      hint: "None of the faults is a policy. Remove any policy you added."
+
+teardown:
+  keepCluster: false

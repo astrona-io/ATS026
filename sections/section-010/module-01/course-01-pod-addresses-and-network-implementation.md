@@ -5,74 +5,95 @@ exam_objectives:
 ---
 # Pod Addresses And Network Implementation
 
-A Pod IP changes when the application is replaced, but the Service still provides the same access point. Pod addressing and Service forwarding are different network responsibilities. Understanding both helps localize a request failure.
+A Pod IP address is assigned when the Pod starts and is released when the Pod is deleted. Every request between Pods uses these addresses, so you need to know who assigns them, what the containers of one Pod share and what carries a packet from one node to another. This part gives you those facts and lets you read them from a running cluster.
 
 ## Learning objectives
 
-- Explain Pod address and shared-network behavior.
-- Identify network implementation responsibilities.
-- Distinguish name resolution from destination connectivity.
+- Explain which network resources the containers of one Pod share.
+- Name the component that assigns Pod addresses and the component that moves traffic between nodes.
+- Read the address, node and range of a Pod with kubectl.
+- Reach a Pod by its IP address from a Pod in another namespace.
 
 ## Before you start
 
-This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+You need the playground from the module page. A **namespace** groups objects; it does not separate the network. A **Pod** is the smallest unit that Kubernetes runs and holds one or more containers.
 
-## Responsible components and behavior
+<!-- astrona:playground:renew -->
 
-The `shuttle` Pod sends a request to the `probe` Pod on another node. Kubernetes gives Pods network identities so applications can communicate without needing to know which node hosts each process. Containers inside a normal Pod share its network namespace and can communicate through the local loopback address.
+Start with the addresses. Run the command, then look at the `IP` and `NODE` columns:
 
-The Kubernetes network model expects Pod-to-Pod communication across nodes without an application needing to translate its Pod address. The network implementation makes that model work through routing, encapsulation or other mechanisms. The details depend on the plugin, infrastructure and configured policy.
+```sh
+kubectl get pods -A -o wide
+```
 
-The Container Network Interface (CNI) defines an interface used to configure container networking. A CNI plugin helps connect Pod network namespaces and allocate addresses. A network implementation may also enforce policy or implement Service forwarding, but these capabilities are not guaranteed merely because a plugin supports CNI.
+Every application Pod has its own IP, and the Pods spread over the two nodes. Pods on the same node and Pods on different nodes show addresses from the same cluster-wide scheme. Now send a request from the `drifter` client in the `outpost` namespace to the `scout` Pod in `starfleet`. First read the address of `scout`:
 
-A Pod's address is different from a node address. Replacement can give an application a new Pod address. Applications therefore should not treat one Pod address as a permanent service location. A Service supplies a stable access abstraction for selected backends while individual Pods change.
+```sh
+kubectl -n starfleet get pod -l app=scout -o jsonpath='{.items[0].status.podIP}{"\n"}'
+```
+
+Replace `<SCOUT_IP>` with that address and request port 9898, the port of the `scout` application:
+
+```sh
+kubectl -n outpost exec deploy/drifter -- curl -s --max-time 3 http://<SCOUT_IP>:9898/
+```
+
+The request works although the two Pods are in different namespaces and, possibly, on different nodes. This is the Kubernetes network model in practice: a Pod reaches another Pod by its IP address, without address translation, regardless of namespace or node.
+
+## What the containers of one Pod share
+
+A Pod gets one network namespace. A **network namespace** is a Linux kernel object that holds a set of network interfaces, a routing table, firewall rules and the list of open ports. All containers in the Pod join this namespace. Three consequences follow.
+
+First, the containers share one IP address. A client in any container reaches a server in another container of the same Pod through `127.0.0.1`. Second, the containers share the port space, so two containers in one Pod cannot listen on the same port. Third, the address belongs to the Pod and not to a container, so a container restart keeps the Pod IP but a new Pod gets a new IP.
+
+An empty container, named `pause` in most runtimes, is started first and owns the namespace. The other containers join it. That is why the network stays up while a single application container restarts.
+
+## Who assigns the address
+
+When the kubelet on a node starts a Pod, it asks the container runtime to create the sandbox, which is the empty container that owns the network namespace. The runtime then calls a **Container Network Interface (CNI) plugin**. CNI is a specification for programs that configure the network interface of a container. The plugin creates a virtual network interface pair, places one end inside the Pod namespace, assigns an address from the range of the node, and adds routes.
+
+Each node gets a slice of the cluster Pod range. You can read the slice of each node:
+
+```sh
+kubectl get nodes -o custom-columns=NAME:.metadata.name,PODCIDR:.spec.podCIDR
+```
+
+The `PODCIDR` column shows the range from which the plugin on that node hands out addresses. Some plugins manage address ranges themselves and leave this field empty. In that case the column is blank, and the plugin documentation tells where the ranges live. kind clusters normally fill it.
 
 ```mermaid
 flowchart TB
-    A["Pod on node A"] -->|"network implementation"| N["Cluster Pod network"]
-    N -->|"routes traffic"| B["Pod on node B"]
-    C["Network plugin"] -->|"configures connectivity"| N
-```
-Cross-node communication depends on the configured network implementation, not on the scheduler forwarding packets.
-
-Connectivity also depends on policy and application listeners. Successful Pod placement does not prove that its port is open or its address is reachable from a particular source. For a communication failure, distinguish addressing, route implementation, traffic policy and the process listening on the destination.
-
-## Addressing Across Node Boundaries
-
-Consider `shuttle` on node A and `probe` on node B. The client process sends a packet using its Pod network namespace. The configured network implementation moves that packet across the required host and infrastructure boundaries, then delivers it to the destination Pod network namespace. The application does not ask the scheduler to relay each packet.
-
-An implementation can route directly between Pod address ranges or encapsulate traffic for transport across the underlying network. Encapsulation wraps the original packet in another packet; routing determines how the destination is reached through the network. The choice affects operational details and overhead, but the application-facing goal remains compatible Pod communication.
-
-Infrastructure still matters. Host routing, firewall rules, address allocation and permitted packet sizes can affect whether the plugin's design works. A valid Pod address is not proof that every node path is healthy. A failure limited to cross-node traffic suggests a different boundary from a failure between two containers sharing one Pod.
-
-## Pod Networking And Service Networking
-
-A Pod address identifies an instance. A Service address identifies a stable access abstraction that can direct clients to several instances. The forwarding component must translate or otherwise implement that access pattern according to its design. A network plugin may provide both Pod connectivity and Service behavior, but the responsibilities remain conceptually distinct.
-
-Replacement can change a Pod address while the Service address stays the same. This helps clients avoid tracking every lifecycle event. Long-lived connections can still point to a failed backend, so applications need appropriate reconnection and safe retries. Stable discovery does not make every established connection immortal.
-
-When explaining a failure, identify whether the client uses an instance address or a Service abstraction, whether the path crosses nodes and which component implements that path. Then consider traffic policy and the listener. These details turn a broad “networking is broken” symptom into a bounded question.
-
-## Work through the decision
-
-Internet Protocol (IP) addresses identify network destinations. A Pod receives its own network context and address through the cluster's network arrangement. The Container Network Interface (CNI) integration participates in connecting Pod networking. Service forwarding separately maps a Service address to backend addresses using the implementation installed in the cluster.
-
-Some platforms replace parts of the usual forwarding arrangement with another implementation. Therefore a correct explanation names the responsibility rather than assuming every cluster uses the same daemon or rule format. Direct Pod reachability tests one path; Service reachability includes selection and virtual-address forwarding too. A result from one cannot automatically establish the other.
-
-```mermaid
-flowchart TB
-    C["Client connection"] --> S["Service virtual address"]
-    S --> F["Service forwarding"]
-    F --> P["Backend Pod address"]
-    N["Pod network connectivity"] --> P
-    P --> A["Application process"]
+    K["kubelet starts Pod"] --> R["container runtime creates sandbox"]
+    R --> C["CNI plugin runs"]
+    C --> I["interface and IP in Pod namespace"]
+    C --> T["routes on the node"]
 ```
 
-Service forwarding selects a destination whose underlying Pod network must also provide connectivity.
+The kubelet starts the Pod, and the CNI plugin creates the interface, the address and the routes that make it reachable.
 
-You can now distinguish network responsibilities and avoid hard-coding replaceable Pod addresses. Investigation should compare the actual caller path, selected endpoint and network implementation before changing cluster-wide settings.
+## How packets cross nodes
+
+Two Pods on the same node are joined through a virtual bridge or direct routes on that node. For Pods on different nodes, the plugin must carry packets between the nodes. There are two common designs. In a routed design, each node knows which node owns each Pod range and sends packets there directly. In an encapsulated design, the plugin wraps the Pod packet in an outer packet addressed to the other node, and the other node unwraps it. Encapsulation needs no knowledge of the underlying network, but the outer header makes each packet larger, so the maximum transmission unit (MTU) of the Pod interface must be smaller than that of the node.
+
+The cluster does not choose the design for you. Kubernetes only requires the result: all Pods can reach all Pods, and all nodes can reach all Pods, without address translation. The plugin that you install decides how this is done. kind installs a simple plugin that routes between its node containers, and the playground can run another plugin when a lesson needs one.
+
+## What the network plugin does not do
+
+Three things are separate from the Pod network and often mistaken for it. Service addresses are virtual and are implemented by the proxy component of each node. Name resolution is done by the cluster DNS server. Traffic rules are enforced by the plugin only when the plugin supports NetworkPolicy. A cluster can have a healthy Pod network and still fail in any of the three.
+
+You can see the Pod network and the Service network side by side. Read the `scout` Service address and compare it with the Pod addresses:
+
+```sh
+kubectl -n starfleet get service scout -o wide
+kubectl -n starfleet get pods -o wide
+```
+
+The ClusterIP of the Service is in a different range from every Pod address, and no interface in the cluster owns it. Only the forwarding rules on the nodes know what to do with a packet for that address.
+
+## Reading the result
+
+You learned that a Pod IP is assigned by the CNI plugin when the Pod starts, that all containers of the Pod share it, and that the plugin is responsible for reaching Pods on other nodes. The next question in any failing request is whether the destination address is reached at all. A request by Pod IP answers that question without a Service or a name in the way, which is why you test it first.
 
 ## Common pitfalls
 
 > [!WARNING]
-> Supporting CNI does not guarantee NetworkPolicy enforcement. Pod addresses can change, and the scheduler does not implement packet forwarding.
+> Do not store a Pod IP in a configuration file: the address changes whenever the Pod is replaced. A namespace is not a network boundary, so a Pod in another namespace can reach your Pod unless a NetworkPolicy blocks it. Installing a CNI plugin does not by itself enforce NetworkPolicy; that depends on the plugin.

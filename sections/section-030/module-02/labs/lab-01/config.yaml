@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Headless Service, ExternalName And Session Affinity (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-030-02-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - docker.io/library/busybox:1.37.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and Services
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: headless-service
+      description: "The Service probe-pods is headless and selects the probe Pods"
+      type: file
+      source: validation/validate-headless-service.sh
+      hint: "A headless Service has clusterIP set to None. It still needs the selector app=probe and port 80 with targetPort http."
+    - name: headless-dns
+      description: "The DNS name of probe-pods returns the Pod addresses of probe"
+      type: file
+      source: validation/validate-headless-dns.sh
+      hint: "Look up probe-pods.starfleet.svc.cluster.local from the shuttle Pod. You must see one address for each ready probe Pod."
+    - name: ledger-externalname
+      description: "The Service ledger in starfleet is an ExternalName Service that answers"
+      type: file
+      source: validation/validate-ledger-externalname.sh
+      hint: "Set spec.type to ExternalName and spec.externalName to the full DNS name of the ledger Service in outpost."
+    - name: probe-session-affinity
+      description: "The Service probe uses ClientIP session affinity with a 600 second timeout"
+      type: file
+      source: validation/validate-probe-session-affinity.sh
+      hint: "Set sessionAffinity and sessionAffinityConfig.clientIP.timeoutSeconds on the existing Service."
+    - name: requests-stick-to-one-pod
+      description: "Twelve requests from the shuttle client reach the same probe Pod"
+      type: file
+      source: validation/validate-requests-stick-to-one-pod.sh
+      hint: "Affinity applies per client source address, so all requests from one client Pod must reach one backend."
+    - name: probe-unchanged
+      description: "The Service probe keeps its ClusterIP and port 80, and the images are unchanged"
+      type: file
+      source: validation/validate-probe-unchanged.sh
+      hint: "Edit the existing Service. Do not delete it and do not change the Deployments."
+
+teardown:
+  keepCluster: false

@@ -5,15 +5,17 @@ exam_objectives:
 ---
 # Use ClusterIP, NodePort, LoadBalancer service types and endpoints
 
-The `probe` Service exposes port 80 while its selected application listens on port 8080. These ports describe two sides of forwarding. Correct labels cannot compensate for a target port that points to the wrong listener.
+This section teaches how a Service gives a changing set of Pods one stable address, and how that address is reached from inside and from outside the cluster. It covers the three Service types, the selector and EndpointSlice objects that find the backends, the port mapping to the container, and the DNS answers for headless, ExternalName and selectorless Services.
 
-The explanations identify the responsible components, compare intended and observed state, and work through the decisions needed to preserve the requirement. Read the worked examples as reasoning about a proposed system; no environment is started by this section.
-
-Each module begins with its goals and ends with a summary. Reusable YAML knowledge checks follow the section summary and are registered separately for future presentation.
+Two modules carry the teaching. The first module explains Service types, selectors, ports, readiness and external entry, and ends with a fixed method for diagnosing a Service that has no working backend. The second module covers headless Services, ExternalName Services, session affinity, traffic policy and the `kube-proxy` modes. Each module has a playground for free practice and a graded lab, and the section ends with a capstone lab and a knowledge check.
 
 ## Learning Outcomes
 
-- Compare ClusterIP, NodePort and LoadBalancer responsibilities.
-- Trace Service and target port mapping.
-- Explain selected ready endpoints.
-- Evaluate external infrastructure and source-path assumptions.
+After this section you can:
+
+- Compare what ClusterIP, NodePort and LoadBalancer Services each add.
+- Trace the Service port, the `targetPort` and the container listener.
+- Read EndpointSlices and explain the ready condition of each address.
+- Diagnose an empty selector match, a wrong target port and a failed readiness probe.
+- Create headless, ExternalName and selectorless Services and explain their DNS answers.
+- Configure session affinity and explain `externalTrafficPolicy`, `internalTrafficPolicy` and the `kube-proxy` modes.

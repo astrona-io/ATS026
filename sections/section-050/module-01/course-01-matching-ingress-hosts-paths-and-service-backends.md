@@ -15,7 +15,7 @@ A client requests `probe.local`, and Traefik chooses an Ingress route before for
 
 ## Before you start
 
-This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+You need the playground that runs Traefik in the `ingress-system` namespace, the `probe` Service in `starfleet` and the `shuttle` client Pod. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. The hands-on steps near the end of this chapter create one Ingress and send requests to it.
 
 ## Responsible components and behavior
 
@@ -71,6 +71,67 @@ flowchart TB
 The controller converts declared matching rules into a frontend-to-backend request path.
 
 You can now separate route declaration, controller realization and connection security. A working external request still needs matching host and path, reachable backends and the intended certificate trust contract.
+
+## Create a route and test host and path matching
+
+Reading the rules is not enough. The next steps create one Ingress and send three requests that differ only in the Host header or the path. The `shuttle` Pod sends the requests, because its BusyBox `wget` command can set a Host header. The target is the `traefik` Service, the entry point of the controller.
+
+<!-- astrona:playground:renew -->
+
+Save this as `ingress-probe-demo.yaml`:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: probe-demo
+  namespace: starfleet
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: demo.local
+    http:
+      paths:
+      - path: /reports
+        pathType: Prefix
+        backend:
+          service:
+            name: probe
+            port:
+              number: 80
+```
+
+Apply it:
+
+```sh
+kubectl apply -f ingress-probe-demo.yaml
+```
+
+Then check the result:
+
+```sh
+kubectl -n starfleet get ingress probe-demo
+kubectl -n starfleet describe ingress probe-demo
+```
+
+The `describe` output lists the rule, the backend as the Service name and port, and the endpoints behind it. The Ingress API server accepted the object, but only the controller makes it work. The next commands send requests through the controller. The first request has the matching host and a path inside the prefix:
+
+```sh
+kubectl -n starfleet exec shuttle -- wget -qO- -T 3 --header 'Host: demo.local' http://traefik.ingress-system.svc/reports/daily
+```
+
+The response body comes from the `probe` application and starts with `version=v1`. Two things happened. Traefik matched the host `demo.local` and the prefix `/reports`, and the `probe` server answered a path that it does not define, because it answers every path with the same body. The path was not rewritten: the application received `/reports/daily`.
+
+The next two requests must fail. The first has another host and the second has a path that only shares text with the prefix:
+
+```sh
+kubectl -n starfleet exec shuttle -- wget -qO- -T 3 --header 'Host: other.local' http://traefik.ingress-system.svc/reports
+kubectl -n starfleet exec shuttle -- wget -qO- -T 3 --header 'Host: demo.local' http://traefik.ingress-system.svc/reports-old
+```
+
+BusyBox `wget` prints a `404 Not Found` error for each one and exits with a nonzero status. Both bodies come from Traefik, not from `probe`, because no rule matched. The path `/reports-old` fails because a `Prefix` rule compares whole path elements, and `reports-old` is a different element than `reports`.
+
+The Ingress works for this host and path. A failing request shows which step broke only when you read the response body, the endpoints and the controller log together.
 
 ## Common pitfalls
 

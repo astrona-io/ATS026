@@ -1,0 +1,848 @@
+# Final domain knowledge check across all six sections.
+---
+schema_version: 1
+kind: question_bank
+id: ats026-final
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: domain
+  id: services-and-networking
+  title: Services & Networking
+questions:
+- id: ats026-final-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain which network resources the containers of one Pod share
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: A Pod has two containers, `web` and `metrics`. `metrics` must read a status
+    page that `web` serves on port 8080. Which address does `metrics` use?
+  options:
+  - id: a
+    text: "`127.0.0.1:8080`"
+    explanation: Correct. All containers of a Pod join one network namespace, so they
+      share the Pod IP and the port space. `127.0.0.1` reaches the other container.
+  - id: b
+    text: The IP address of the node that runs the Pod.
+    explanation: The node address is not used inside a Pod; the Pod has its own address.
+  - id: c
+    text: A second Pod IP that the CNI plugin gives to `metrics`.
+    explanation: A Pod has one IP address shared by all its containers, not one per
+      container.
+  - id: d
+    text: Only a Service name; containers of one Pod cannot reach each other directly.
+    explanation: The containers share one network namespace, so a Service is not needed.
+  correct_option: a
+  explanation: Correct. All containers of a Pod join one network namespace, so they
+    share the Pod IP and the port space. `127.0.0.1` reaches the other container.
+- id: ats026-final-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Name the components that assign Pod addresses and carry traffic
+    between nodes
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: Which component creates the network interface and assigns the IP address
+    of a new Pod?
+  options:
+  - id: a
+    text: The kube-proxy on the node.
+    explanation: kube-proxy implements Service forwarding, not Pod addresses.
+  - id: b
+    text: The CNI plugin, called by the container runtime when the Pod sandbox is
+      created.
+    explanation: Correct. The kubelet asks the runtime to create the sandbox, and
+      the runtime calls the CNI plugin, which creates the interface, assigns the address
+      and sets routes.
+  - id: c
+    text: The CoreDNS Pods.
+    explanation: CoreDNS answers name queries and assigns no addresses.
+  - id: d
+    text: The kube-scheduler.
+    explanation: The scheduler only chooses the node for the Pod.
+  correct_option: b
+  explanation: Correct. The kubelet asks the runtime to create the sandbox, and the
+    runtime calls the CNI plugin, which creates the interface, assigns the address
+    and sets routes.
+- id: ats026-final-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Reach a Pod by its IP address from a Pod in another namespace
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: The `drifter` Pod in `outpost` sends a request to the Pod IP of `scout`
+    in `starfleet` and gets an answer. No NetworkPolicy exists. What does this show?
+  options:
+  - id: a
+    text: The request only worked because a Service named `scout` exists.
+    explanation: The request used the Pod IP directly, so no Service was involved.
+  - id: b
+    text: The Pods must run on the same node.
+    explanation: The network model requires that Pods reach each other across nodes
+      without address translation.
+  - id: c
+    text: 'A namespace is not a network boundary: Pods reach each other by IP across
+      namespaces and nodes unless a policy blocks it.'
+    explanation: Correct. Namespaces group objects but do not isolate the network.
+  - id: d
+    text: DNS translated the Pod IP into a Service address.
+    explanation: No name was resolved because the request used an IP address.
+  correct_option: c
+  explanation: Correct. Namespaces group objects but do not isolate the network.
+- id: ats026-final-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Read the resolver settings of a Pod and explain each line
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: In `/etc/resolv.conf` of a Pod, the `nameserver` line holds one address.
+    Which object does it belong to?
+  options:
+  - id: a
+    text: The ClusterIP of the `kube-dns` Service in `kube-system`, which forwards
+      to the CoreDNS Pods.
+    explanation: Correct. The kubelet writes the ClusterIP of the cluster DNS Service
+      into the file, and the Service forwards queries to CoreDNS Pods.
+  - id: b
+    text: The IP of the node that runs the Pod.
+    explanation: The resolver does not ask the node by default.
+  - id: c
+    text: The IP of the API server.
+    explanation: The API server does not answer name queries.
+  - id: d
+    text: The Pod IP of the first CoreDNS Pod.
+    explanation: The file names the Service address, which stays stable when CoreDNS
+      Pods are replaced.
+  correct_option: a
+  explanation: Correct. The kubelet writes the ClusterIP of the cluster DNS Service
+    into the file, and the Service forwards queries to CoreDNS Pods.
+- id: ats026-final-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Resolve a Service in the same namespace and in another namespace
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: A client in `starfleet` requests `http://probe.outpost/`. Which Service
+    answers?
+  options:
+  - id: a
+    text: The `probe` Service in `starfleet`, because the client namespace is always
+      used.
+    explanation: "`probe.outpost` names the namespace, so the client namespace is
+      not used."
+  - id: b
+    text: The `probe` Service in `outpost`, because the second search suffix expands
+      the name.
+    explanation: Correct. `probe.outpost` has fewer dots than `ndots` 5, so the search
+      list is tried and `probe.outpost.svc.cluster.local` exists.
+  - id: c
+    text: 'No Service: a name with a dot is never expanded.'
+    explanation: With `ndots:5` a name with fewer than five dots is expanded with
+      the search suffixes.
+  - id: d
+    text: The `probe` Service in `kube-system`.
+    explanation: "`kube-system` is not named in the request."
+  correct_option: b
+  explanation: Correct. `probe.outpost` has fewer dots than `ndots` 5, so the search
+    list is tried and `probe.outpost.svc.cluster.local` exists.
+- id: ats026-final-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Write a default-deny ingress policy and predict which Pods it
+    isolates
+  source_readings:
+  - sections/section-020/module-02/course-01-default-deny-and-namespace-isolation.md
+  prompt: 'A namespace `starfleet` has no NetworkPolicy. You apply a policy with `podSelector:
+    {}`, `policyTypes: [Ingress]` and no `ingress` rules. What is the result?'
+  options:
+  - id: a
+    text: Every Pod in every namespace accepts no incoming connection.
+    explanation: A policy applies only to Pods in its own namespace.
+  - id: b
+    text: Every Pod in `starfleet` accepts no incoming and no outgoing connection.
+    explanation: Only `Ingress` is listed, so egress is not isolated.
+  - id: c
+    text: Nothing changes, because a policy without rules is ignored.
+    explanation: An isolating policy takes effect even without rules; the empty rule
+      list means that nothing is allowed.
+  - id: d
+    text: Every Pod in `starfleet` accepts no incoming connection, until another policy
+      allows some.
+    explanation: Correct. The empty `podSelector` selects every Pod in the policy
+      namespace, and `Ingress` in `policyTypes` isolates them for ingress. With no
+      rules, nothing is allowed in.
+  correct_option: d
+  explanation: Correct. The empty `podSelector` selects every Pod in the policy namespace,
+    and `Ingress` in `policyTypes` isolates them for ingress. With no rules, nothing
+    is allowed in.
+- id: ats026-final-q07
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain how selectors in one peer entry and in separate entries
+    combine
+  source_readings:
+  - sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
+  prompt: 'A rule must allow only the Pods labelled `app: shuttle` in the namespace
+    labelled `team: starfleet`. Which `from` is correct?'
+  options:
+  - id: a
+    text: 'Two entries: one `namespaceSelector` for `team: starfleet` and one `podSelector`
+      for `app: shuttle`.'
+    explanation: 'Two entries are alternatives. This admits every Pod in the namespace
+      and every `app: shuttle` Pod in the policy namespace.'
+  - id: b
+    text: One entry that holds both the `namespaceSelector` and the `podSelector`.
+    explanation: Correct. Selectors in one entry must both match, so only `shuttle`
+      Pods in that namespace are allowed.
+  - id: c
+    text: 'One `podSelector` for `app: shuttle` only.'
+    explanation: A `podSelector` alone selects Pods only in the namespace of the policy.
+  - id: d
+    text: One `ipBlock` with the Pod CIDR.
+    explanation: "`ipBlock` is meant for addresses outside the cluster, and Pod addresses
+      change."
+  correct_option: b
+  explanation: Correct. Selectors in one entry must both match, so only `shuttle`
+    Pods in that namespace are allowed.
+- id: ats026-final-q08
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Describe when a Pod becomes isolated
+  source_readings:
+  - sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
+  prompt: A Pod is selected by no NetworkPolicy. Which statement is correct?
+  options:
+  - id: a
+    text: It accepts all incoming and all outgoing traffic.
+    explanation: Correct. A Pod that no policy selects is not isolated and allows
+      all traffic in both directions.
+  - id: b
+    text: It accepts only traffic from its own namespace.
+    explanation: Namespaces do not limit traffic without policies.
+  - id: c
+    text: It accepts incoming traffic but cannot send traffic.
+    explanation: Egress is not limited without a policy that selects the Pod for egress.
+  - id: d
+    text: It accepts no incoming traffic until a policy allows it.
+    explanation: Isolation starts only when a policy selects the Pod for that direction.
+  correct_option: a
+  explanation: Correct. A Pod that no policy selects is not isolated and allows all
+    traffic in both directions.
+- id: ats026-final-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Write an egress rule that keeps name resolution working
+  source_readings:
+  - sections/section-020/module-01/course-02-networkpolicy-and-allowed-connections.md
+  prompt: A default-deny egress policy in `outpost` makes every request by name fail.
+    Which rule restores name resolution?
+  options:
+  - id: a
+    text: Deleting the Service `kube-dns`.
+    explanation: Deleting a Service does not allow traffic and breaks resolution.
+  - id: b
+    text: An `ingress` rule that allows the CoreDNS Pods.
+    explanation: Name resolution requests leave the Pod, so they are egress traffic.
+  - id: c
+    text: An `egress` rule to the CoreDNS Pods in `kube-system` on port 53, UDP and
+      TCP.
+    explanation: Correct. Names are resolved by the CoreDNS Pods, reached on port
+      53 with UDP and also TCP for large answers.
+  - id: d
+    text: An `egress` rule to the Service IP of `kube-dns` on port 80.
+    explanation: DNS listens on port 53, not 80.
+  correct_option: c
+  explanation: Correct. Names are resolved by the CoreDNS Pods, reached on port 53
+    with UDP and also TCP for large answers.
+- id: ats026-final-q10
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use the Pod port, not the Service port, in a policy rule
+  source_readings:
+  - sections/section-020/module-02/course-02-verifying-and-troubleshooting-policies.md
+  prompt: The Service `probe` listens on port 80 and forwards to the container port
+    8080. Which port must the ingress rule of the policy list?
+  options:
+  - id: a
+    text: 8080, the container port.
+    explanation: Correct. The policy matches the destination port of the packet after
+      the Service address is replaced by the Pod address.
+  - id: b
+    text: Both, because a policy sees both.
+    explanation: The policy sees only the Pod address and port.
+  - id: c
+    text: No port, because policies ignore ports.
+    explanation: A `ports` list restricts traffic to the listed ports.
+  - id: d
+    text: 80, the Service port.
+    explanation: The Service address is replaced before the policy is evaluated.
+  correct_option: a
+  explanation: Correct. The policy matches the destination port of the packet after
+    the Service address is replaced by the Pod address.
+- id: ats026-final-q11
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain which objects connect a Service selector to backend
+    Pods
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: The Service `probe` in `starfleet` exists and has a ClusterIP, but requests
+    fail and `kubectl get endpointslices -l kubernetes.io/service-name=probe` shows
+    a slice with no addresses. The Pods are `Running` and `Ready`. What is the most
+    likely cause?
+  options:
+  - id: a
+    text: The Service port is different from the container port.
+    explanation: This option would leave ready addresses in the slice and give a refused
+      connection.
+  - id: b
+    text: The ClusterIP is outside the Service range.
+    explanation: The API server allocates the ClusterIP, and an address outside the
+      range is rejected at creation.
+  - id: c
+    text: The Service selector does not match the labels of the Pods.
+    explanation: Correct. The EndpointSlice controller adds only Pods whose labels
+      contain every pair in the selector.
+  - id: d
+    text: The Service type must be NodePort for endpoints to exist.
+    explanation: Endpoints exist for every type that has a selector.
+  correct_option: c
+  explanation: A selector that matches no Pod gives an empty EndpointSlice and no
+    error. A wrong port would leave ready addresses in the slice. The Service type
+    does not decide whether endpoints exist.
+- id: ats026-final-q12
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Trace a request from the Service port through targetPort to
+    the container listener
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: 'A Service has `port: 80` and `targetPort: 9000`. The Pods are ready and
+    listen only on port 8080. A client requests the Service. What does the client
+    see?'
+  options:
+  - id: a
+    text: A refused connection, because nothing listens on port 9000 of the Pod.
+    explanation: Correct. The Pods are selected and ready, so traffic reaches the
+      Pod address at port 9000 where no socket is open.
+  - id: b
+    text: A successful answer, because `kube-proxy` finds port 8080.
+    explanation: "`kube-proxy` forwards to the port in the EndpointSlice and does
+      not search for another port."
+  - id: c
+    text: A DNS error, because the Service name cannot be resolved.
+    explanation: DNS depends on the Service object, which exists.
+  - id: d
+    text: A timeout, because the selector matches no Pod.
+    explanation: The selector is correct in this case, since the Pods are ready endpoints.
+  correct_option: a
+  explanation: The EndpointSlice holds ready addresses with port 9000. The node answers
+    the connection to that port with a refusal.
+- id: ats026-final-q13
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain the ready condition of an EndpointSlice address
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: One of three `probe` Pods shows `0/1` in the `READY` column and its status
+    is `Running`. What happens to new connections to the Service?
+  options:
+  - id: a
+    text: They still go to all three Pods, because the Pod is `Running`.
+    explanation: The status `Running` does not mean the Pod is ready for traffic.
+  - id: b
+    text: They fail, because a Service needs all Pods ready.
+    explanation: A Service sends traffic to the ready subset and does not need all
+      Pods ready.
+  - id: c
+    text: They go to the third Pod first, to give it load.
+    explanation: Not ready Pods get no new traffic.
+  - id: d
+    text: 'They go only to the two ready Pods, because the address of the third has
+      `ready: false`.'
+    explanation: Correct. `kube-proxy` removes addresses that are not ready from the
+      rules for new connections.
+  correct_option: d
+  explanation: The readiness probe drives the Pod `Ready` condition, and the EndpointSlice
+    controller copies it to the address.
+- id: ats026-final-q14
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Compare what ClusterIP, NodePort and LoadBalancer Services add
+  source_readings:
+  - sections/section-030/module-01/course-02-external-entry-and-application-routing.md
+  prompt: A team creates a Service of type `LoadBalancer` on a kind cluster with no
+    load balancer controller. What does `kubectl get service` show in the `EXTERNAL-IP`
+    column, and why?
+  options:
+  - id: a
+    text: An address from the Pod network, because kind assigns one.
+    explanation: kind does not assign external addresses to Services.
+  - id: b
+    text: "`<pending>`, because no controller provisions the external load balancer."
+    explanation: Correct. The pending state says that nothing provides the load balancer,
+      not that the application failed.
+  - id: c
+    text: The node address, because every Service gets one.
+    explanation: The node address is used only for the node port.
+  - id: d
+    text: "`<none>`, because the Service has no selector."
+    explanation: The column for ClusterIP Services shows `<none>`, and this Service
+      does have a selector.
+  correct_option: b
+  explanation: The Service gets a ClusterIP and a node port, but only a controller
+    can provision an external load balancer and write its address into the status.
+- id: ats026-final-q15
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Describe how NodePort exposes a Service
+  source_readings:
+  - sections/section-030/module-01/course-02-external-entry-and-application-routing.md
+  prompt: 'A Service has `type: NodePort` and the allocated node port is 31234. Which
+    statement is correct?'
+  options:
+  - id: a
+    text: Only nodes that run a backend Pod open port 31234.
+    explanation: The rules exist on every node, with or without a local backend.
+  - id: b
+    text: The API server opens port 31234 on the control plane node.
+    explanation: The API server stores the allocation and does not open ports.
+  - id: c
+    text: Every node opens port 31234 and `kube-proxy` forwards it to the ready backends.
+    explanation: Correct. The backends can be on other nodes.
+  - id: d
+    text: The port is reachable from the internet as soon as the Service exists.
+    explanation: Routes and firewalls decide that; the Kubernetes object does not
+      change them.
+  correct_option: c
+  explanation: "`kube-proxy` writes the rules on every node, so every node accepts
+    the node port. Reachability from outside also depends on routing and firewalls."
+- id: ats026-final-q16
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Name the job of a GatewayClass, a Gateway and an HTTPRoute
+  source_readings:
+  - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  prompt: A cluster has the Envoy Gateway controller installed. Which object tells
+    the cluster which controller handles a Gateway?
+  options:
+  - id: a
+    text: A `Gateway`, through its `listeners` field.
+    explanation: A listener opens a port. It does not name the controller.
+  - id: b
+    text: A `GatewayClass`, through its `controllerName` field. A `Gateway` points
+      at the class with `gatewayClassName`.
+    explanation: Correct. The class is cluster-scoped and names the controller that
+      reads every Gateway of that class.
+  - id: c
+    text: An `HTTPRoute`, through its `parentRefs` field.
+    explanation: "`parentRefs` names the Gateway the route attaches to, not a controller."
+  - id: d
+    text: A `Service` of type `LoadBalancer` in the `kube-system` namespace.
+    explanation: A Service does not choose the controller of a Gateway.
+  correct_option: b
+  explanation: The class is cluster-scoped and names the controller that reads every
+    Gateway of that class.
+- id: ats026-final-q17
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain why a route in another namespace is refused and fix
+    it
+  source_readings:
+  - sections/section-040/module-01/course-02-routes-and-status-conditions.md
+  - sections/section-040/module-02/course-03-cross-namespace-routes-and-reference-grants.md
+  prompt: 'A route in `outpost` has `parentRefs` to the Gateway `edge` in `starfleet`.
+    The listener has `allowedRoutes.namespaces.from: Same`. The route shows `Accepted=False`.
+    What is the reason and the fix?'
+  options:
+  - id: a
+    text: The reason is `BackendNotFound`. Create the Service.
+    explanation: That reason belongs to `ResolvedRefs` and a missing Service. It does
+      not explain a refused attachment.
+  - id: b
+    text: The reason is `RefNotPermitted`. Create a `ReferenceGrant` in `outpost`.
+    explanation: That reason belongs to a backend reference, and a grant does not
+      permit attachment to a Gateway.
+  - id: c
+    text: The reason is `NotAllowedByListeners`. The Gateway owner must change `allowedRoutes`
+      to allow the namespace, for example with a label selector.
+    explanation: Correct. The listener decides which namespaces may attach, and the
+      owner of the Gateway controls that field.
+  - id: d
+    text: The reason is `Programmed=False`. Delete and create the Gateway again.
+    explanation: "`Programmed` describes the Gateway, not the attachment of one route."
+  correct_option: c
+  explanation: The listener decides which namespaces may attach, and the owner of
+    the Gateway controls that field.
+- id: ats026-final-q18
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Read the Accepted and ResolvedRefs conditions and say which
+    one fails for which cause
+  source_readings:
+  - sections/section-040/module-01/course-02-routes-and-status-conditions.md
+  prompt: An `HTTPRoute` has `Accepted=True` and `ResolvedRefs=False` with the reason
+    `BackendNotFound`. What does that mean?
+  options:
+  - id: a
+    text: The route attached to the Gateway, but a Service named in `backendRefs`
+      does not exist.
+    explanation: Correct. `Accepted` covers the attachment and the rule syntax. `ResolvedRefs`
+      covers the references to backends.
+  - id: b
+    text: The route did not attach, because the listener refused the namespace.
+    explanation: A refused attachment shows as `Accepted=False`.
+  - id: c
+    text: The Gateway has no address yet.
+    explanation: A missing address shows in the `Programmed` condition of the Gateway.
+  - id: d
+    text: The controller does not support a filter in the route.
+    explanation: An unsupported filter does not give the reason `BackendNotFound`.
+  correct_option: a
+  explanation: "`Accepted` covers the attachment and the rule syntax. `ResolvedRefs`
+    covers the references to backends."
+- id: ats026-final-q19
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Predict which rule wins when several rules match
+  source_readings:
+  - sections/section-040/module-02/course-01-matches-precedence-and-weights.md
+  prompt: A route has one rule with `PathPrefix /` and one rule with `PathPrefix /echo`.
+    A client sends `GET /echo/probe`. Which rule serves it, and why?
+  options:
+  - id: a
+    text: The rule with `/`, because it comes first in the list.
+    explanation: The list position only breaks the last tie. It is not the first test.
+  - id: b
+    text: The rule with `/echo`, because a longer path prefix wins over a shorter
+      one.
+    explanation: Correct. Both prefixes match. The controller prefers the match with
+      the longer path.
+  - id: c
+    text: Neither rule. The controller returns a 404 response when two rules match.
+    explanation: Several matching rules are normal, and precedence picks one.
+  - id: d
+    text: Both rules, and the proxy sends the request to both backends.
+    explanation: A request is served by exactly one rule.
+  correct_option: b
+  explanation: Both prefixes match. The controller prefers the match with the longer
+    path.
+- id: ats026-final-q20
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Split traffic between two Services with weight
+  source_readings:
+  - sections/section-040/module-02/course-01-matches-precedence-and-weights.md
+  prompt: 'A rule has `backendRefs` for `scout-v1` with `weight: 3` and for `scout-v2`
+    with `weight: 1`. What share of requests goes to `scout-v2`?'
+  options:
+  - id: a
+    text: 1 percent, because the weights are percentages.
+    explanation: Weights are shares of the sum, not percentages.
+  - id: b
+    text: 33 percent, because there are three more requests for the first backend.
+    explanation: 33 percent would need the weights 2 and 1.
+  - id: c
+    text: 25 percent, because the share is `weight / sum of weights`, which is 1 of
+      4.
+    explanation: Correct. The proxy sends each backend the share `weight / total`.
+  - id: d
+    text: 50 percent, because the default weight is the same for every backend.
+    explanation: The default weight applies only when the field is not set.
+  correct_option: c
+  explanation: The proxy sends each backend the share `weight / total`.
+- id: ats026-final-q21
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain why an Ingress without a matching controller and IngressClass
+    does nothing
+  source_readings:
+  - sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+  - sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  prompt: 'A team creates an Ingress in `starfleet` with `ingressClassName: legacy`.
+    The API server accepts it, but requests for its host return a 404 from Traefik.
+    The class `legacy` names a controller string that no running program owns. What
+    is the cause?'
+  options:
+  - id: a
+    text: The Ingress has a syntax error that `kubectl apply` did not report.
+    explanation: The API server validates the object and accepted it, so the syntax
+      is valid.
+  - id: b
+    text: No controller owns the class `legacy`, so nothing handles the Ingress even
+      though the object is valid.
+    explanation: Correct. A controller handles only the classes it owns. The API server
+      accepts an Ingress with an unowned class and does not report an error.
+  - id: c
+    text: Traefik handles every class and needs a restart.
+    explanation: Traefik in this setup is started for the class `traefik` only.
+  - id: d
+    text: The Service port is wrong.
+    explanation: A wrong Service port is a different fault and does not depend on
+      the class.
+  correct_option: b
+  explanation: Correct. A controller handles only the classes it owns. The API server
+    accepts an Ingress with an unowned class and does not report an error.
+- id: ats026-final-q22
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Make one IngressClass the default class and predict which Ingresses
+    it affects
+  source_readings:
+  - sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  prompt: 'The annotation `ingressclass.kubernetes.io/is-default-class: "true"` is
+    added to the IngressClass `traefik`. An Ingress named `early` was created before
+    that and has no `ingressClassName`. An Ingress named `late` is created after it
+    with no `ingressClassName`. What does `kubectl get ingress` show?'
+  options:
+  - id: a
+    text: "`traefik` for both."
+    explanation: The API server does not change existing Ingresses.
+  - id: b
+    text: "`<none>` for both."
+    explanation: The default class is assigned when the Ingress is created and when
+      the annotation exists.
+  - id: c
+    text: "`<none>` for `early` and `traefik` for `late`."
+    explanation: Correct. The API server writes the default class into an Ingress
+      at creation time only. `early` keeps an empty class.
+  - id: d
+    text: "`traefik` for `early` and `<none>` for `late`."
+    explanation: The order is reversed.
+  correct_option: c
+  explanation: Correct. The API server writes the default class into an Ingress at
+    creation time only. `early` keeps an empty class.
+- id: ats026-final-q23
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Make one IngressClass the default class and predict which Ingresses
+    it affects
+  source_readings:
+  - sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  prompt: 'Two IngressClasses carry the annotation `ingressclass.kubernetes.io/is-default-class:
+    "true"`. A user applies an Ingress with no `ingressClassName`. What happens?'
+  options:
+  - id: a
+    text: The API server picks the class with the older creation time.
+    explanation: The API server does not choose between defaults.
+  - id: b
+    text: The API server refuses to create the Ingress because the default is ambiguous.
+    explanation: Correct. With more than one default class the API server prevents
+      the creation of Ingresses that have no class.
+  - id: c
+    text: The Ingress is created and every controller handles it.
+    explanation: Controllers handle only the classes they own.
+  - id: d
+    text: The Ingress is created with an empty class and no controller handles it.
+    explanation: Creation fails, so no object exists.
+  correct_option: b
+  explanation: Correct. With more than one default class the API server prevents the
+    creation of Ingresses that have no class.
+- id: ats026-final-q24
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Write Exact and Prefix paths and predict which rule a request
+    matches
+  source_readings:
+  - sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+  - sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  prompt: An Ingress has one rule with the path `/app` and the path type `Prefix`.
+    Which request path does it match?
+  options:
+  - id: a
+    text: "`/apple`"
+    explanation: "`Prefix` compares whole path elements, and `apple` is a different
+      element than `app`."
+  - id: b
+    text: "`/app/home`"
+    explanation: Correct. `/app/home` has `/app` as its first element.
+  - id: c
+    text: "`/App`"
+    explanation: Matching is case sensitive.
+  - id: d
+    text: "`/ap`"
+    explanation: "`/ap` is shorter than the rule path."
+  correct_option: b
+  explanation: Correct. `/app/home` has `/app` as its first element.
+- id: ats026-final-q25
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Write Exact and Prefix paths and predict which rule a request
+    matches
+  source_readings:
+  - sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  prompt: 'A rule has the path `/status` with `pathType: Exact`. Which request does
+    it match?'
+  options:
+  - id: a
+    text: "`/status/`"
+    explanation: "`Exact` does not match a trailing slash."
+  - id: b
+    text: "`/status/health`"
+    explanation: "`Exact` matches only the whole path."
+  - id: c
+    text: "`/status`"
+    explanation: Correct. `Exact` matches the whole path and is case sensitive.
+  - id: d
+    text: "`/Status`"
+    explanation: Matching is case sensitive.
+  correct_option: c
+  explanation: Correct. `Exact` matches the whole path and is case sensitive.
+- id: ats026-final-q26
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain how the search list and ndots turn a short Service name
+    into a full name
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: A Pod in `starfleet` runs `wget http://probe/` and gets an answer. The same
+    command in a Pod in `outpost` fails, although the Service `probe` exists in `starfleet`.
+    What explains this?
+  options:
+  - id: a
+    text: CoreDNS cannot answer a query from another namespace without a rewrite rule.
+    explanation: The `kubernetes` plugin answers any Service name in the cluster.
+  - id: b
+    text: The `kube-dns` Service only answers Pods in the namespace `starfleet`.
+    explanation: Every Pod with the default policy uses the same `kube-dns` ClusterIP,
+      whatever its namespace.
+  - id: c
+    text: The search domains start with the namespace of the asking Pod, so `probe`
+      becomes `probe.outpost.svc.cluster.local`, which does not exist.
+    explanation: Correct. The first search domain is the Pod's own namespace, so a
+      short name is safe only inside one namespace. `probe.starfleet` names the namespace
+      and works.
+  - id: d
+    text: The `ndots` option is 5 in `starfleet` and 0 in `outpost`.
+    explanation: The kubelet writes `ndots:5` into the resolver file of both Pods.
+  correct_option: c
+  explanation: The search domains always start with the namespace of the Pod that
+    asks, so a request across namespaces needs `<service>.<namespace>`.
+- id: ats026-final-q27
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Locate the Corefile and name the role of the kubernetes and
+    forward plugins
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: Where does a cluster keep the CoreDNS configuration, and which plugin sends
+    names outside the cluster to an upstream resolver?
+  options:
+  - id: a
+    text: In `/etc/resolv.conf` of each Pod; the `cache` plugin sends other names
+      upstream.
+    explanation: That file is written by the kubelet and tells the Pod where the server
+      is; it is not the Corefile.
+  - id: b
+    text: In the Deployment `coredns` as an environment variable; the `loop` plugin
+      sends other names upstream.
+    explanation: The Corefile is mounted from a ConfigMap, and `loop` only detects
+      forwarding loops.
+  - id: c
+    text: In the ConfigMap `coredns` in `kube-system`, under the key `Corefile`; the
+      `forward` plugin sends other names upstream.
+    explanation: Correct. The `kubernetes` plugin answers `cluster.local` names, and
+      `forward` handles everything it does not own.
+  - id: d
+    text: In the Secret `corefile` in `default`; the `kubernetes` plugin sends other
+      names upstream.
+    explanation: The file is a ConfigMap in `kube-system`, and the `kubernetes` plugin
+      answers cluster names only.
+  correct_option: c
+  explanation: CoreDNS mounts the ConfigMap as a file, the `kubernetes` plugin answers
+    cluster names and `forward` sends the rest to the upstream resolvers.
+- id: ats026-final-q28
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Predict the queries that a name with fewer dots than ndots produces
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: A Pod with the default settings looks up `example.com`. The name has one
+    dot and `ndots` is 5. What happens?
+  options:
+  - id: a
+    text: The name is sent upstream first, and the search domains are only used when
+      it fails.
+    explanation: With fewer dots than `ndots`, the search domains come first.
+  - id: b
+    text: The resolver tries the search domains first, each answered with "name does
+      not exist", and the last attempt, `example.com`, reaches the upstream resolver.
+    explanation: Correct. Each failed attempt is one extra query to CoreDNS. A name
+      that ends in a dot, `example.com.`, skips the list.
+  - id: c
+    text: The query is refused, because a name outside `cluster.local` is not allowed.
+    explanation: The `forward` plugin answers names the `kubernetes` plugin does not
+      own.
+  - id: d
+    text: The resolver asks only for `example.com.starfleet.svc.cluster.local` and
+      stops.
+    explanation: The resolver goes through all search domains and then tries the name
+      as written.
+  correct_option: b
+  explanation: A name with fewer dots than `ndots` goes through the search list first,
+    and a trailing dot removes the search list from a test.
+- id: ats026-final-q29
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Diagnose CoreDNS Pods that crash after a Corefile edit from
+    the logs
+  source_readings:
+  - sections/section-060/module-01/course-02-corefile-errors-and-repair.md
+  prompt: After an edit of the `coredns` ConfigMap and a restart, the CoreDNS Pods
+    show `CrashLoopBackOff`. What is the best first diagnostic step?
+  options:
+  - id: a
+    text: Edit `/etc/resolv.conf` in the application Pods.
+    explanation: That file points the application at the server; it does not change
+      the server configuration.
+  - id: b
+    text: Delete the `kube-dns` Service and let it be recreated.
+    explanation: The Service is not the fault; a Service without ready endpoints answers
+      nothing, but the Pods are the problem.
+  - id: c
+    text: Scale the Deployment to more replicas.
+    explanation: More replicas give more crashing Pods when the cause is a Corefile
+      error.
+  - id: d
+    text: Read the Pod logs with `kubectl -n kube-system logs -l k8s-app=kube-dns`
+      and look for a parse error.
+    explanation: Correct. The log names the line that CoreDNS could not read, which
+      points at the edit.
+  correct_option: d
+  explanation: A parse error in the log means the Corefile is wrong, so the fix is
+    to correct or restore the ConfigMap, not to add replicas.
+- id: ats026-final-q30
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Restore a Corefile safely from a backup and make CoreDNS load
+    it
+  source_readings:
+  - sections/section-060/module-01/course-02-corefile-errors-and-repair.md
+  prompt: You saved the old Corefile to a file before editing. How do you put it back
+    so that the running Pods use it?
+  options:
+  - id: a
+    text: Apply the backup with `kubectl apply -f` directly, as a plain text file.
+    explanation: A Corefile is not a Kubernetes object, so it must go into the `Corefile`
+      key of the ConfigMap.
+  - id: b
+    text: Change `dnsPolicy` of the CoreDNS Pods to `Default`.
+    explanation: That changes where the CoreDNS Pods send their own queries, not their
+      configuration.
+  - id: c
+    text: Delete the CoreDNS Pods and wait; they read the backup file on your machine.
+    explanation: The Pods read the ConfigMap, never a file on your machine, and deleting
+      Pods is not the way to load a change.
+  - id: d
+    text: Recreate the ConfigMap from the backup with `kubectl create configmap coredns
+      --from-file=Corefile=<file> --dry-run=client -o yaml`, apply the result, then
+      run `kubectl -n kube-system rollout restart deployment/coredns`.
+    explanation: Correct. The ConfigMap is the source of the file in every Pod, and
+      the restart makes the Pods read it at once instead of after the `reload` delay.
+  correct_option: d
+  explanation: Restore the ConfigMap key `Corefile` from the backup, apply it and
+    use `rollout restart` so the Pods load it.

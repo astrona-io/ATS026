@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Isolate A Namespace With Network Policies (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-020-02-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+    addons:
+      cni: calico
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and the starting state
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: shuttle-reaches-bridge
+      description: "The shuttle Pod in starfleet reaches the bridge Service"
+      type: file
+      source: validation/validate-shuttle-reaches-bridge.sh
+      hint: "Isolating the namespace must not cut traffic between its own Pods. Add a policy that allows the namespace itself."
+    - name: drifter-reaches-scout
+      description: "The drifter Pod in outpost reaches the scout Service"
+      type: file
+      source: validation/validate-drifter-reaches-scout.sh
+      hint: "Select the namespace and the Pod label in one from entry, and allow the Pod port 9898, not the Service port."
+    - name: drifter-blocked-from-bridge
+      description: "The drifter Pod in outpost cannot reach the bridge Service"
+      type: file
+      source: validation/validate-drifter-blocked-from-bridge.sh
+      hint: "A Pod that no policy selects accepts every source. Isolate all Pods in starfleet with a default-deny ingress policy."
+    - name: drifter-blocked-from-probe
+      description: "The drifter Pod in outpost cannot reach the probe Service in starfleet"
+      type: file
+      source: validation/validate-drifter-blocked-from-probe.sh
+      hint: "Allow drifter only to scout. Keep the from entry narrow."
+    - name: outpost-has-no-policy
+      description: "No NetworkPolicy exists in outpost"
+      type: file
+      source: validation/validate-outpost-has-no-policy.sh
+      hint: "Write the policies in the namespace of the destination Pods, which is starfleet."
+
+teardown:
+  keepCluster: false

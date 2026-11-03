@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Network Policies Capstone (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-020-capstone-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+    addons:
+      cni: calico
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and the starting state
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: drifter-reaches-scout
+      description: "The drifter Pod reaches the scout Service by name"
+      type: file
+      source: validation/validate-drifter-reaches-scout.sh
+      hint: "Egress from drifter needs a DNS rule and a rule for scout on its Pod port 9898. Ingress to scout must admit drifter."
+    - name: drifter-blocked-from-probe-starfleet
+      description: "The drifter Pod cannot reach the probe Service in starfleet"
+      type: file
+      source: validation/validate-drifter-blocked-from-probe-starfleet.sh
+      hint: "The egress rule for drifter names only scout."
+    - name: drifter-blocked-from-probe-outpost
+      description: "The drifter Pod cannot reach the probe Service in outpost"
+      type: file
+      source: validation/validate-drifter-blocked-from-probe-outpost.sh
+      hint: "With default deny for egress in outpost, drifter may send only what a rule allows."
+    - name: visitor-blocked-from-outpost-probe
+      description: "The visitor Pod in depot cannot reach the probe Service in outpost"
+      type: file
+      source: validation/validate-visitor-blocked-from-outpost-probe.sh
+      hint: "Isolate every Pod in outpost for ingress as well as egress."
+    - name: visitor-blocked-from-scout
+      description: "The visitor Pod in depot cannot reach the scout Service"
+      type: file
+      source: validation/validate-visitor-blocked-from-scout.sh
+      hint: "The scout ingress rule must name the outpost namespace and the drifter label, not every namespace."
+    - name: shuttle-reaches-scout
+      description: "The shuttle Pod in starfleet still reaches the scout Service"
+      type: file
+      source: validation/validate-shuttle-reaches-scout.sh
+      hint: "Once scout is isolated, its own namespace client needs a rule."
+    - name: shuttle-reaches-bridge
+      description: "The shuttle Pod still reaches the bridge Service"
+      type: file
+      source: validation/validate-shuttle-reaches-bridge.sh
+      hint: "Do not isolate the other Pods in starfleet."
+
+teardown:
+  keepCluster: false

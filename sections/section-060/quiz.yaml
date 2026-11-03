@@ -1,0 +1,366 @@
+# Knowledge check for section 060. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats026-060
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-060
+  title: Understand and use CoreDNS
+questions:
+- id: ats026-060-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain how the search list and ndots turn a short Service name
+    into a full name
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: A Pod in `starfleet` runs `wget http://probe/` and gets an answer. The same
+    command in a Pod in `outpost` fails, although the Service `probe` exists in `starfleet`.
+    What explains this?
+  options:
+  - id: a
+    text: CoreDNS cannot answer a query from another namespace without a rewrite rule.
+    explanation: The `kubernetes` plugin answers any Service name in the cluster.
+  - id: b
+    text: The `kube-dns` Service only answers Pods in the namespace `starfleet`.
+    explanation: Every Pod with the default policy uses the same `kube-dns` ClusterIP,
+      whatever its namespace.
+  - id: c
+    text: The search domains start with the namespace of the asking Pod, so `probe`
+      becomes `probe.outpost.svc.cluster.local`, which does not exist.
+    explanation: Correct. The first search domain is the Pod's own namespace, so a
+      short name is safe only inside one namespace. `probe.starfleet` names the namespace
+      and works.
+  - id: d
+    text: The `ndots` option is 5 in `starfleet` and 0 in `outpost`.
+    explanation: The kubelet writes `ndots:5` into the resolver file of both Pods.
+  correct_option: c
+  explanation: The search domains always start with the namespace of the Pod that
+    asks, so a request across namespaces needs `<service>.<namespace>`.
+- id: ats026-060-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Locate the Corefile and name the role of the kubernetes and
+    forward plugins
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: Where does a cluster keep the CoreDNS configuration, and which plugin sends
+    names outside the cluster to an upstream resolver?
+  options:
+  - id: a
+    text: In `/etc/resolv.conf` of each Pod; the `cache` plugin sends other names
+      upstream.
+    explanation: That file is written by the kubelet and tells the Pod where the server
+      is; it is not the Corefile.
+  - id: b
+    text: In the Deployment `coredns` as an environment variable; the `loop` plugin
+      sends other names upstream.
+    explanation: The Corefile is mounted from a ConfigMap, and `loop` only detects
+      forwarding loops.
+  - id: c
+    text: In the ConfigMap `coredns` in `kube-system`, under the key `Corefile`; the
+      `forward` plugin sends other names upstream.
+    explanation: Correct. The `kubernetes` plugin answers `cluster.local` names, and
+      `forward` handles everything it does not own.
+  - id: d
+    text: In the Secret `corefile` in `default`; the `kubernetes` plugin sends other
+      names upstream.
+    explanation: The file is a ConfigMap in `kube-system`, and the `kubernetes` plugin
+      answers cluster names only.
+  correct_option: c
+  explanation: CoreDNS mounts the ConfigMap as a file, the `kubernetes` plugin answers
+    cluster names and `forward` sends the rest to the upstream resolvers.
+- id: ats026-060-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Predict the queries that a name with fewer dots than ndots produces
+  source_readings:
+  - sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  prompt: A Pod with the default settings looks up `example.com`. The name has one
+    dot and `ndots` is 5. What happens?
+  options:
+  - id: a
+    text: The name is sent upstream first, and the search domains are only used when
+      it fails.
+    explanation: With fewer dots than `ndots`, the search domains come first.
+  - id: b
+    text: The resolver tries the search domains first, each answered with "name does
+      not exist", and the last attempt, `example.com`, reaches the upstream resolver.
+    explanation: Correct. Each failed attempt is one extra query to CoreDNS. A name
+      that ends in a dot, `example.com.`, skips the list.
+  - id: c
+    text: The query is refused, because a name outside `cluster.local` is not allowed.
+    explanation: The `forward` plugin answers names the `kubernetes` plugin does not
+      own.
+  - id: d
+    text: The resolver asks only for `example.com.starfleet.svc.cluster.local` and
+      stops.
+    explanation: The resolver goes through all search domains and then tries the name
+      as written.
+  correct_option: b
+  explanation: A name with fewer dots than `ndots` goes through the search list first,
+    and a trailing dot removes the search list from a test.
+- id: ats026-060-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Diagnose CoreDNS Pods that crash after a Corefile edit from
+    the logs
+  source_readings:
+  - sections/section-060/module-01/course-02-corefile-errors-and-repair.md
+  prompt: After an edit of the `coredns` ConfigMap and a restart, the CoreDNS Pods
+    show `CrashLoopBackOff`. What is the best first diagnostic step?
+  options:
+  - id: a
+    text: Edit `/etc/resolv.conf` in the application Pods.
+    explanation: That file points the application at the server; it does not change
+      the server configuration.
+  - id: b
+    text: Delete the `kube-dns` Service and let it be recreated.
+    explanation: The Service is not the fault; a Service without ready endpoints answers
+      nothing, but the Pods are the problem.
+  - id: c
+    text: Scale the Deployment to more replicas.
+    explanation: More replicas give more crashing Pods when the cause is a Corefile
+      error.
+  - id: d
+    text: Read the Pod logs with `kubectl -n kube-system logs -l k8s-app=kube-dns`
+      and look for a parse error.
+    explanation: Correct. The log names the line that CoreDNS could not read, which
+      points at the edit.
+  correct_option: d
+  explanation: A parse error in the log means the Corefile is wrong, so the fix is
+    to correct or restore the ConfigMap, not to add replicas.
+- id: ats026-060-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Restore a Corefile safely from a backup and make CoreDNS load
+    it
+  source_readings:
+  - sections/section-060/module-01/course-02-corefile-errors-and-repair.md
+  prompt: You saved the old Corefile to a file before editing. How do you put it back
+    so that the running Pods use it?
+  options:
+  - id: a
+    text: Apply the backup with `kubectl apply -f` directly, as a plain text file.
+    explanation: A Corefile is not a Kubernetes object, so it must go into the `Corefile`
+      key of the ConfigMap.
+  - id: b
+    text: Change `dnsPolicy` of the CoreDNS Pods to `Default`.
+    explanation: That changes where the CoreDNS Pods send their own queries, not their
+      configuration.
+  - id: c
+    text: Delete the CoreDNS Pods and wait; they read the backup file on your machine.
+    explanation: The Pods read the ConfigMap, never a file on your machine, and deleting
+      Pods is not the way to load a change.
+  - id: d
+    text: Recreate the ConfigMap from the backup with `kubectl create configmap coredns
+      --from-file=Corefile=<file> --dry-run=client -o yaml`, apply the result, then
+      run `kubectl -n kube-system rollout restart deployment/coredns`.
+    explanation: Correct. The ConfigMap is the source of the file in every Pod, and
+      the restart makes the Pods read it at once instead of after the `reload` delay.
+  correct_option: d
+  explanation: Restore the ConfigMap key `Corefile` from the backup, apply it and
+    use `rollout restart` so the Pods load it.
+- id: ats026-060-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain how server blocks and zones decide which block answers
+    a query
+  source_readings:
+  - sections/section-060/module-02/course-01-corefile-plugins-stub-domains-and-rewrite.md
+  prompt: A Corefile has the blocks `.:53` and `partner.example:53`. Which block handles
+    a query for `relic.partner.example`, and why?
+  options:
+  - id: a
+    text: "`.:53`, because it is the first block in the file."
+    explanation: Order in the file does not decide; the zone does.
+  - id: b
+    text: "`partner.example:53`, because CoreDNS picks the server block with the longest
+      matching zone."
+    explanation: Correct. All other names stay in the `.:53` block, so the default
+      behaviour is kept.
+  - id: c
+    text: Both blocks run and the faster answer wins.
+    explanation: One query is handled by one server block.
+  - id: d
+    text: Neither; a second block needs a separate CoreDNS Deployment.
+    explanation: One CoreDNS process can serve several zones from one Corefile.
+  correct_option: b
+  explanation: The longest matching zone wins, which is what makes a stub domain possible
+    without touching the default block.
+- id: ats026-060-q07
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Add a rewrite rule that maps an old name to a Service and explain
+    where it acts
+  source_readings:
+  - sections/section-060/module-02/course-01-corefile-plugins-stub-domains-and-rewrite.md
+  prompt: Old software calls `deck.fleet.internal`, which no Service has. The `bridge`
+    Service must answer. Which change is correct and why does the line position in
+    the block not matter?
+  options:
+  - id: a
+    text: Add `rewrite` to a new block for the zone `.` on port 1053.
+    explanation: That is a second server for another port, not the block the Pods
+      query.
+  - id: b
+    text: Add a Service named `deck.fleet.internal` in `kube-system`.
+    explanation: A Service name cannot contain the dots of a domain name like this.
+  - id: c
+    text: Add `rewrite name exact deck.fleet.internal bridge.starfleet.svc.cluster.local`
+      to the `.:53` block; CoreDNS runs plugins in a fixed compiled order, so `rewrite`
+      acts before `kubernetes`.
+    explanation: Correct. With the type `exact` the answer name is changed back, so
+      the client sees the name it asked for.
+  - id: d
+    text: Add the same line after the closing brace of the block.
+    explanation: A directive outside of a block is a Corefile error.
+  correct_option: c
+  explanation: The `rewrite` plugin changes the name before the `kubernetes` plugin
+    sees it, and the plugin order is fixed in the binary, not by line order.
+- id: ats026-060-q08
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Choose a dnsPolicy and a dnsConfig for a Pod with special resolver
+    needs
+  source_readings:
+  - sections/section-060/module-02/course-02-pod-dns-policy-dnsconfig-and-ndots.md
+  prompt: A Pod must use only the DNS server of a partner and nothing from the cluster.
+    Which Pod settings do this?
+  options:
+  - id: a
+    text: "`dnsPolicy: None` and `dnsConfig.nameservers` with the partner address."
+    explanation: Correct. The policy `None` ignores all cluster settings, and a `None`
+      Pod without a name server is rejected.
+  - id: b
+    text: "`hostNetwork: true` and no other setting."
+    explanation: A Pod on the host network gets the resolver of the node, not a partner
+      server.
+  - id: c
+    text: "`dnsPolicy: Default` and no `dnsConfig`."
+    explanation: "`Default` uses the resolver settings of the node, not a chosen server."
+  - id: d
+    text: "`dnsPolicy: ClusterFirst` and a `dnsConfig` with the partner address."
+    explanation: The `dnsConfig` is merged on top of the cluster file, so the cluster
+      server stays in the list.
+  correct_option: a
+  explanation: "`dnsPolicy: None` makes `dnsConfig` the whole resolver file, so it
+    needs at least one name server."
+- id: ats026-060-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Predict the effect of ndots on the queries a Pod sends
+  source_readings:
+  - sections/section-060/module-02/course-02-pod-dns-policy-dnsconfig-and-ndots.md
+  prompt: 'A Deployment sets `dnsConfig.options` to `ndots: 1`. What changes for the
+    name `probe.starfleet`, which has one dot?'
+  options:
+  - id: a
+    text: The resolver tries `probe.starfleet` as written first, so the search domains
+      are used only if that fails.
+    explanation: Correct. A name with at least `ndots` dots is tried as an absolute
+      name first.
+  - id: b
+    text: The name always fails, because search domains are removed.
+    explanation: The search list is still there; only the order of tries changes.
+  - id: c
+    text: The change applies to the running Pods at once.
+    explanation: "`dnsConfig` is part of the Pod template, so only new Pods get it
+      after a rollout."
+  - id: d
+    text: The Pod stops using CoreDNS.
+    explanation: The policy is unchanged, so the name server is still the `kube-dns`
+      ClusterIP.
+  correct_option: a
+  explanation: A lower `ndots` sends names with fewer dots to the upstream first,
+    which can break an in-cluster multi-dot name, and it needs a rollout to reach
+    new Pods.
+- id: ats026-060-q10
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain why a StatefulSet needs a headless Service for per-Pod
+    DNS names
+  source_readings:
+  - sections/section-060/module-02/course-03-headless-services-and-pod-dns-records.md
+  prompt: 'A StatefulSet `crew` has `serviceName: crew`, but `crew-0.crew.starfleet.svc.cluster.local`
+    does not resolve. The Service `crew` has a ClusterIP. What is the correct fix?'
+  options:
+  - id: a
+    text: 'Add `dnsPolicy: None` to the StatefulSet.'
+    explanation: That removes the cluster resolver and makes the lookup fail.
+  - id: b
+    text: 'Patch the Service with `clusterIP: None`.'
+    explanation: The field `clusterIP` cannot be changed on an existing Service.
+  - id: c
+    text: 'Delete and recreate the Service `crew` with `clusterIP: None`, and keep
+      the StatefulSet.'
+    explanation: Correct. A headless Service gives each ready Pod its own name; the
+      StatefulSet does not need to change.
+  - id: d
+    text: Delete the StatefulSet and recreate it with more replicas.
+    explanation: The StatefulSet is fine; its Service is the problem.
+  correct_option: c
+  explanation: Per-Pod names exist only when the Service in `serviceName` is headless,
+    and because `clusterIP` is immutable the Service is recreated.
+- id: ats026-060-q11
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Describe what a headless Service lookup returns
+  source_readings:
+  - sections/section-060/module-02/course-03-headless-services-and-pod-dns-records.md
+  prompt: What does a lookup of a headless Service name return, compared with a Service
+    that has a ClusterIP?
+  options:
+  - id: a
+    text: A CNAME to the first Pod.
+    explanation: A CNAME is what an `ExternalName` Service returns.
+  - id: b
+    text: No record; only the SRV record exists.
+    explanation: The A records exist, and the SRV record is an addition for named
+      ports.
+  - id: c
+    text: One A record with the ClusterIP in both cases.
+    explanation: A headless Service has no ClusterIP.
+  - id: d
+    text: One A record for each ready Pod that the selector matches; Pods that are
+      not ready are left out, unless `publishNotReadyAddresses` is true.
+    explanation: Correct. The client sees the Pod addresses and chooses one.
+  correct_option: d
+  explanation: A ClusterIP Service answers with one address, while a headless Service
+    answers with the addresses of the ready Pods.
+- id: ats026-060-q12
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Apply a scaling and configuration change to CoreDNS safely and
+    know its limits
+  source_readings:
+  - sections/section-060/module-02/course-04-scaling-and-debugging-coredns.md
+  prompt: You changed the Corefile ConfigMap and need three CoreDNS replicas that
+    all use the new file. Which sequence is correct?
+  options:
+  - id: a
+    text: Edit the ConfigMap and wait; the Pods always restart when a ConfigMap changes.
+    explanation: A ConfigMap change does not restart the Pods, and `reload` takes
+      about one to two minutes.
+  - id: b
+    text: Delete the three Pods by hand after the edit.
+    explanation: Use `rollout restart` instead of deleting Pods.
+  - id: c
+    text: Run `kubectl -n kube-system scale deployment coredns --replicas=3`, then
+      `rollout restart deployment/coredns`, wait with `rollout status` and test a
+      cluster name and an outside name.
+    explanation: Correct. The restart makes every replica read the file, and a DNS
+      autoscaler, if present, can reset the replica count.
+  - id: d
+    text: Scale to three replicas and skip the restart, because a scale fixes a Corefile
+      error.
+    explanation: A scale does not fix a Corefile error; it only gives more crashing
+      Pods.
+  correct_option: c
+  explanation: Scale for load, restart for configuration, and test with a full name
+    so the search list is not a variable.

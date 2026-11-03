@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Services And Endpoints Capstone (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-030-capstone-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - docker.io/library/busybox:1.37.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and the faulty Service
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: probe-has-backends
+      description: "The Service probe has three ready endpoints"
+      type: file
+      source: validation/validate-probe-has-backends.sh
+      hint: "Compare the Service selector with the Pod labels. The Pods carry app=probe and tier=web."
+    - name: probe-answers
+      description: "http://probe/ answers HTTP 200 from the shuttle client"
+      type: file
+      source: validation/validate-probe-answers.sh
+      hint: "The Pods listen on the container port named http. Check the targetPort of the Service."
+    - name: probe-nodeport
+      description: "probe is a NodePort Service on node port 30090 and answers on every node address"
+      type: file
+      source: validation/validate-probe-nodeport.sh
+      hint: "Set the type to NodePort and nodePort to 30090. Keep port 80."
+    - name: probe-peers-headless
+      description: "probe-peers is headless and its DNS name returns the Pod addresses"
+      type: file
+      source: validation/validate-probe-peers-headless.sh
+      hint: "A headless Service has clusterIP None. It needs the selector app=probe."
+    - name: probe-affinity
+      description: "probe uses ClientIP session affinity with a 300 second timeout"
+      type: file
+      source: validation/validate-probe-affinity.sh
+      hint: "Set sessionAffinity and timeoutSeconds on the existing Service."
+    - name: unchanged
+      description: "Service probe keeps port 80, the Deployment is unchanged and the Service was not recreated"
+      type: file
+      source: validation/validate-unchanged.sh
+      hint: "Repair the Service in place. Do not edit the Deployment or its labels."
+
+teardown:
+  keepCluster: false

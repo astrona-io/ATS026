@@ -1,0 +1,58 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  parentRefs:
+    - name: edge
+  hostnames:
+    - scout.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+          headers:
+            - type: Exact
+              name: x-canary
+              value: "true"
+      backendRefs:
+        - name: scout-v2
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: scout-v1
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /legacy
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            statusCode: 301
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /echo
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /anything
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: x-route
+                value: scout
+      backendRefs:
+        - name: echo
+          port: 80

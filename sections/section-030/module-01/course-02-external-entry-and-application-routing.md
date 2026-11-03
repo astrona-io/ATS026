@@ -5,78 +5,86 @@ exam_objectives:
 ---
 # External Entry And Application Routing
 
-A Service of type LoadBalancer exists, but its external address stays unassigned. The object requests an integration that the platform must actually supply.
+A ClusterIP Service works only inside the cluster. A team that wants browsers or other systems outside the cluster to reach `probe` must choose another entry. This part explains what each Service type adds, which component does the work, and what each type needs from the infrastructure around the cluster.
 
-## Learning objectives
+The three Service types build on each other. A `NodePort` Service is also a ClusterIP Service. A `LoadBalancer` Service is also a NodePort Service by default. Each type keeps the behaviour of the one before it and adds one more way in.
 
-- Compare ClusterIP, NodePort and LoadBalancer responsibilities.
-- Trace Service and target port mapping.
-- Explain selected ready endpoints.
+## NodePort
 
-## Before you start
+A NodePort Service opens the same port number on every node of the cluster. The API server picks the number from the NodePort range, which is 30000 to 32767 by default and is set by the flag `--service-node-port-range` of the API server. You can also choose a number inside that range yourself with `nodePort`. Two Services cannot use the same number.
 
-This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+The component that opens the port is `kube-proxy`, not the Service object. On each node it writes rules that match packets sent to any address of that node on the node port, and it forwards them to the ready backends in the EndpointSlice, in the same way as for the ClusterIP. The backends can be on other nodes, so a request to one node can end at a Pod on another node.
 
-## Responsible components and behavior
+<!-- astrona:playground:renew -->
 
-A team wants browsers outside the cluster to reach `probe`. A NodePort Service exposes a port on node addresses through the cluster's Service implementation. An external client still needs network access to those node addresses. Firewall and infrastructure routing rules can prevent access even when the Service object exists.
+Save this as `service-probe-nodeport.yaml`:
 
-A LoadBalancer Service requests an external load balancer through an available implementation, often a cloud integration. A local cluster may have no implementation that provides an external address. Creating the resource does not automatically install a cloud load balancer or make one available on every platform.
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  type: NodePort
+  selector:
+    app: probe
+    release: probe
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    nodePort: 30080
+```
 
-Ingress describes external web routing rules, commonly based on hostnames and paths, for Hypertext Transfer Protocol (HTTP) traffic. An Ingress controller implements those rules. Creating an Ingress resource without a suitable controller leaves the routing intent without the component needed to serve traffic.
+Apply it:
 
-The Gateway API is a set of Kubernetes networking APIs with explicit roles for infrastructure and application routing. A GatewayClass identifies a controller implementation. A Gateway describes listeners, and a route such as HTTPRoute describes how matching requests reach backends. Availability depends on installed resource definitions, a compatible controller and supported features.
+```sh
+kubectl apply -f service-probe-nodeport.yaml
+```
+
+The file also fixes the selector, so the Service now has two backends. Then check the type and the node addresses, and request the node port from the `shuttle` client Pod. Replace `<NODE_IP>` with an `INTERNAL-IP` from the node list:
+
+```sh
+kubectl -n starfleet get service probe
+kubectl get nodes -o wide
+kubectl -n starfleet exec shuttle -- wget -q -T 3 -O- http://<NODE_IP>:30080/
+```
+
+The Service column `PORT(S)` shows `80:30080/TCP`, which reads as the Service port, a colon and the node port. The answer of the request starts with `version=v1` and names the Pod host. In the kind playground the node addresses are private container addresses, so only Pods and the container engine host can reach them.
+
+## What NodePort needs from the network
+
+The Kubernetes object does not make a node reachable. A client outside the cluster needs a route to the node address, and every firewall and security group on the way must allow the node port. On a cloud provider the nodes often have only private addresses, so a NodePort alone is not reachable from the internet.
+
+A NodePort also exposes the Service on every node, including nodes that run no backend Pod. The field `externalTrafficPolicy` decides what such a node does. With the default `Cluster`, the node forwards the connection to any ready backend in the cluster and replaces the client source address with its own address, so the Pod does not see the real client address. With `Local`, the node forwards only to backends on the same node, keeps the client source address, and drops the connection when no local backend exists.
+
+## LoadBalancer
+
+A Service of type `LoadBalancer` asks the environment for an external load balancer. The Service controller inside `cloud-controller-manager` watches such Services. On a cloud provider it creates the load balancer through the provider API, points it at the node port of every node, and writes the address into `status.loadBalancer.ingress`. The column `EXTERNAL-IP` then shows that address.
+
+Without such a controller, nothing watches the Service type. The Service still gets its ClusterIP and its node port, but `EXTERNAL-IP` stays at `<pending>`. A kind cluster, a bare-metal cluster and most laboratory clusters are in this state until a component such as MetalLB or `cloud-provider-kind` is installed. A pending address therefore says that no controller provides the load balancer. It does not say that the application failed.
+
+When a LoadBalancer works, a request takes this path:
 
 ```mermaid
 flowchart TB
-    C["External client"] -->|"request"| G["Ingress or Gateway implementation"]
-    G -->|"route to backend"| S["Service"]
-    S -->|"eligible endpoint"| P["Application Pod"]
-```
-The entry implementation interprets routing resources and forwards requests toward the application backend.
-
-Choose an access method from the protocol, platform and operating roles. A stable internal endpoint suggests ClusterIP. Node-level exposure suggests NodePort. An external load balancer requires supporting infrastructure. Shared HTTP routing requires an appropriate Ingress or Gateway implementation rather than only another Pod label.
-
-## Mapping Infrastructure And Application Roles
-
-With NodePort, the external caller connects to a node address and allocated node port. The cluster's forwarding implementation then connects that access path to Service backends. The caller needs a reachable node address and the infrastructure must permit the traffic. A private node address behind a firewall is not made public by the Kubernetes resource alone.
-
-With LoadBalancer, a supporting integration provisions or configures an external access point. Its health behavior and forwarding arrangement can depend on the implementation and platform. Pending external-address allocation can therefore mean infrastructure integration is missing or still progressing, rather than that the application image failed.
-
-An Ingress controller adds HTTP routing based on declared rules. A matching host and path can select a backend, and transport security can be configured through the implementation's supported mechanisms. The route declaration and the serving controller are separate resources and responsibilities. A correct rule without a reachable controller does not provide an endpoint.
-
-## Gateway API Role Separation
-
-GatewayClass identifies which controller handles a class of gateways. Infrastructure operators can manage gateway listeners and allowed route attachment. Application owners can manage routes that attach where permitted. This separates a shared entry platform from each application's routing intent, subject to the API's and implementation's supported controls.
-
-A route can be present but not accepted, or accepted but unable to resolve its backend references. Status conditions help distinguish those outcomes. Cross-namespace references can require explicit permission mechanisms, so a route pointing at another namespace is not automatically authorized merely because the object exists.
-
-For a proposed access method, list the client protocol, infrastructure capability, route owner and backend. Internal connectivity, public exposure and application routing are different requirements. The complete solution supplies the implementation and permissions that realize the declared access path, then verifies the request behavior from the intended external caller.
-
-## Work through the decision
-
-ClusterIP, NodePort and LoadBalancer describe different access arrangements. NodePort uses a supported port on eligible node networking, while LoadBalancer requests the environment's external-balancer integration. Neither starts the application listener or repairs an empty backend set.
-
-An Ingress or Gateway adds application routing through an appropriate controller and reachable frontend. External name resolution, firewall reachability, routing match and backend readiness are distinct dependencies. A port that answers does not prove the intended hostname and path reach the correct application. Verify the caller's actual path instead of treating one populated status field as end-to-end success.
-
-```mermaid
-flowchart TB
-    N0["External client address"]
-    N1["Provisioned entry point"]
-    N2["Application routing"]
-    N3["Service backend mapping"]
-    N4["Ready listener and response"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
+    C["External client"] -->|"external address"| L["External load balancer"]
+    L -->|"node port"| N["Node and kube-proxy"]
+    N -->|"ready endpoint"| P["Pod on port 8080"]
 ```
 
-External access combines infrastructure and application routing contracts beyond the Service object itself.
+The diagram shows that the load balancer reaches the Pod through the same node port and `kube-proxy` rules as a NodePort Service.
 
-External access combines infrastructure and application routing contracts beyond the Service object itself.
+## Routing for web traffic
+
+Services work on the transport level: they forward TCP or UDP connections by address and port. They cannot choose a backend by host name or URL path. For that, a cluster runs a controller that implements an Ingress or a Gateway API route. The controller itself is usually exposed with one LoadBalancer or NodePort Service, and it forwards each HTTP request to a normal ClusterIP Service by the rules in the route.
+
+An Ingress or HTTPRoute object does nothing without that controller. The Service behind the route still needs selected, ready backends. This means that external web access depends on four things that can fail alone: a reachable entry address, a running controller, a matching route and a Service with ready endpoints.
+
+You can now tell what each type adds: a ClusterIP gives an internal address, a NodePort adds a port on every node, and a LoadBalancer asks for an external address on top of the node port. The open question is how to find out which of these links is broken when a request fails.
 
 ## Common pitfalls
 
 > [!WARNING]
-> Routing resources describe intent. External addresses and HTTP routes require a functioning implementation and reachable infrastructure.
+> Do not expect `EXTERNAL-IP` to be filled in on a cluster without a load balancer controller. A node port outside 30000 to 32767 is rejected unless the API server range was changed. A reachable node IP inside a private network does not mean the port is reachable from the internet, because a firewall can still block it. With `externalTrafficPolicy: Local`, a node with no local backend drops the connection.

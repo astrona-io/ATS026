@@ -5,29 +5,7 @@ exam_objectives:
 ---
 # Attach An HTTPRoute To A Gateway Solution
 
-Use a host shell with the private kubeconfig for this independent kind environment. A kubeconfig identifies the cluster and credentials used by kubectl, the Kubernetes command-line tool.
-
-```sh
-export KUBECONFIG="$(astrona kubeconfig ats-026-lab-040-01-01)"
-test "$(kubectl config current-context)" = "kind-astro-ats-026-lab-040-01-01" || exit 1
-node_name="astro-ats-026-lab-040-01-01-control-plane"
-worker_name="astro-ats-026-lab-040-01-01-worker"
-```
-
-Keep this connection selected. Host-level commands name only this environment's node containers. They do not operate on the host operating system.
-
-## Inspect And Explain
-
-The isolated environment has two healthy probe replicas, an internal Service and two client Pods. The required result has not been configured.
-
-Inspect the current objects before changing them:
-
-```sh
-kubectl -n starfleet get pods -o wide
-kubectl get nodes -o wide
-```
-
-Create Gateway probe using class eg and an HTTP listener on port 80 allowing same-namespace routes. Attach HTTPRoute probe for host probe.local, Prefix path / and backend probe port 80. Gateway Programmed and route Accepted and ResolvedRefs conditions must be True. A request through the generated Envoy Service must receive version one with the matching Host header.
+The `eg` class already exists, so the work is one Gateway and one HTTPRoute in `starfleet`. The listener accepts routes from its own namespace only, which is the default, and the route names its backend by the Service port.
 
 Save this as `gateway-probe.yaml`:
 
@@ -67,25 +45,24 @@ spec:
       port: 80
 ```
 
-Apply the scoped correction:
+Apply it:
 
 ```sh
 kubectl apply -f gateway-probe.yaml
 ```
 
-## Verify The Result
-
-Observe the actual result. A denied request returns a nonzero status when the denial works, so run it separately from a shell sequence that stops on error. Status convergence and a successful request establish different parts of the result.
+Then check the result. Wait for the Gateway, read the route conditions and send a request through the Gateway address:
 
 ```sh
 kubectl -n starfleet wait --for=condition=Programmed gateway/probe --timeout=240s
+kubectl -n starfleet get httproute probe -o jsonpath='{range .status.parents[0].conditions[*]}{.type}={.status}{"\n"}{end}'
+GATEWAY=$(kubectl -n starfleet get gateway probe -o jsonpath='{.status.addresses[0].value}')
+kubectl -n starfleet exec shuttle -- wget -qO- --header 'Host: probe.local' "http://$GATEWAY/"
 ```
 
-Connect class, listener, route and backend and inspect controller acceptance. The commands above deliberately target one environment. Keep its remaining components available so an unrelated failure cannot stand in for the required denial or correction. No example command output is presented as evidence of a completed run. A matching field alone does not establish that a process used it or that a controller reconciled it.
-
-After recording your result, remove the independent lab with `astrona destroy ats-026-lab-040-01-01`.
+The route shows `Accepted=True` and `ResolvedRefs=True`, and the request returns a line that contains `version=v1`. Submit with `astrona submit -c .`. When you are done, remove the environment with `astrona destroy ats-026-lab-040-01-01`.
 
 ## Common pitfalls
 
 > [!WARNING]
-> Confirm the private context and exact node names before a change. Check the stated scope and live result. Do not change unrelated components to hide the original fault.
+> The route and the Gateway must have the same name in `parentRefs`. Use port 80, the Service port, not 8080, the container port. Do not set `from: All` on the listener.

@@ -5,68 +5,108 @@ exam_objectives:
 ---
 # NetworkPolicy And Allowed Connections
 
-The `shuttle` client should reach `probe`, while an unrelated caller should not. A NetworkPolicy can express that network allowance only when the installed network implementation enforces it. Successful API creation is therefore not the complete security check.
+Ingress policy protects a server. Egress policy limits what a client may open. Egress is harder to write because a client usually needs a second destination that its author did not think about: the cluster DNS server. This part shows how egress rules work, why DNS must be allowed explicitly and how the network plugin treats replies and established connections.
 
 ## Learning objectives
 
-- Explain directional selection and additive allowances.
-- Interpret peer selectors and ports.
-- Identify required discovery and backend dependencies.
+- Write an egress policy that allows one destination and DNS.
+- Explain why a client that is isolated for egress cannot resolve names unless DNS is allowed.
+- Explain how replies to allowed connections are handled.
+- Describe what a network plugin must do for a policy to have any effect.
 
 ## Before you start
 
-This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+You need the ingress model: a Pod is isolated for a direction when a policy selects it for that direction, and rules only allow traffic. In an **egress** rule the peers are written under `to` instead of `from`, and they describe where the selected Pods may connect.
 
-## Responsible components and behavior
+<!-- astrona:playground:renew -->
 
-The `probe` application should accept traffic from `shuttle` and reject unrelated callers. A NetworkPolicy selects destination or source Pods and describes allowed network traffic. The cluster's network implementation must support and enforce it. The API server can accept a policy even when the installed network implementation does not enforce its rules.
+First check that the client works with no egress restriction:
 
-Ingress policy governs incoming traffic to selected Pods. Egress policy governs outgoing traffic from selected Pods. In a direction where no policy isolates a Pod, traffic is allowed by default under the NetworkPolicy model. Once policies isolate that direction, the union of their allowed rules determines permitted traffic.
+```sh
+kubectl -n starfleet exec deploy/shuttle -- curl -s --max-time 3 -o /dev/null -w '%{http_code}\n' http://bridge/
+kubectl -n starfleet exec deploy/shuttle -- curl -s --max-time 3 -o /dev/null -w '%{http_code}\n' http://probe/
+```
 
-When both endpoints are isolated, the source's egress and destination's ingress must permit the connection. An ingress allowance at the destination cannot override an egress restriction at the source. Return traffic for an allowed connection is handled as part of that connection rather than requiring an independent reversed rule.
+Both requests return 200. The client can reach any Service, and it uses the cluster DNS server to find each one.
 
-Selectors and rule structure matter. A Pod selector applies within the relevant namespace scope; a namespace selector can identify other namespaces by labels. Combining selectors in one peer can require both conditions, while separate peers represent alternatives. An empty selected-Pod set and an empty allowed-peer set have different meanings.
+## Isolating a client for egress
 
-Standard NetworkPolicy focuses on network connections through addresses, ports and protocols. It does not express arbitrary HTTP path authorization or user identity rules. It also does not automatically encrypt traffic. Features beyond the standard API depend on the implementation.
+Save this as `shuttle-egress.yaml`. It selects the `shuttle` Pod, covers only `Egress`, and allows two destinations: Pods labelled `app: bridge` on TCP port 80, and the cluster DNS Pods on port 53 for both UDP and TCP:
 
-For a blocked request, identify which Pods each policy selects, which directions are isolated and what peers and ports are allowed. This is more reliable than assuming a policy named “allow” permits every connection involving the application.
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shuttle-egress
+  namespace: starfleet
+spec:
+  podSelector:
+    matchLabels:
+      app: shuttle
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: bridge
+      ports:
+        - protocol: TCP
+          port: 80
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+```
 
-## Calculating Allowed Traffic
+Apply it:
 
-Suppose a policy selects `probe` Pods for ingress isolation and allows callers with `app: shuttle` in `starfleet` on the intended application port. Another policy selects those same destination Pods and allows a monitoring caller. The permitted ingress is the union of these allowances; the second policy does not replace the first.
+```sh
+kubectl apply -f shuttle-egress.yaml
+```
 
-Now consider a `shuttle` source whose egress is isolated. Even if the destination allows it, the source must permit the outbound connection. A connection is not allowed merely because one direction contains a permissive rule. Determine isolation and applicable allowances independently at both endpoints.
+Then repeat the two requests. The request to `bridge` still returns 200. The request to `probe` fails, because the policy allows only `bridge` and the DNS Pods. The name `probe` still resolves, since DNS is allowed, so the failure is a dropped connection and not a name error. Confirm it by reading the curl exit code after the failing request: it is 28, a timeout.
 
-An empty Pod selector selects every Pod in the policy's namespace. An isolated direction with no allowed traffic can express default deny for those selected Pods. An empty or omitted rule structure can mean something else depending on its position, so the location of a selector or list matters as much as its words. Evaluate the API structure rather than the policy's filename.
+## Why DNS must be listed
 
-## Namespace And Pod Selection Together
+A client asks the resolver for an address before every new connection, and the resolver sends the question to the DNS Service as UDP or TCP traffic on port 53. When a Pod is isolated for egress, this traffic is also dropped unless a rule allows it. Remove the second `egress` entry from the policy and apply it again, and requests by name fail before a connection to `bridge` is even attempted, although the rule for `bridge` is correct.
 
-A peer that combines a namespace selector and Pod selector requires a matching Pod in a matching namespace. Separate peer entries can instead express alternatives. Confusing those structures can widen access beyond the intended caller group. Namespace labels also need controlled ownership if security depends on their values.
-
-Egress isolation often needs explicit allowance for dependencies such as DNS and data services. A blocked DNS lookup can prevent an application from reaching an otherwise allowed backend by name. The application symptom can therefore occur before the intended backend connection is attempted.
-
-Standard policies govern supported connection properties, not every application operation. They cannot independently decide whether an authenticated user may delete a report at a particular HTTP path. A complete design connects network isolation with identity, authorization and encryption requirements while confirming that the network implementation actually enforces the rules.
-
-## Work through the decision
-
-A NetworkPolicy selects Pods in its namespace and isolates the specified ingress or egress direction. For an isolated direction, the applicable policies contribute allowed connections as a union. One policy named deny cannot cancel traffic explicitly allowed by another applicable policy.
-
-For this example, assume the cluster uses Calico, a network implementation that supports policy enforcement. A plain kind cluster's default networking should not be assumed to enforce the same policy. When both caller egress and destination ingress are isolated, both sides must allow the connection. Application authorization and encryption remain separate properties; standard NetworkPolicy does not decide which authenticated user may invoke an HTTP path.
+The destination of the DNS rule is the CoreDNS Pods in `kube-system`, not the ClusterIP of the DNS Service. The network plugin evaluates policy after the Service address has been replaced by a Pod address, so a rule must name the Pods behind the Service. The label `k8s-app: kube-dns` is set on the CoreDNS Pods by the default installation and is the label to select in most clusters; check it with `kubectl -n kube-system get pods --show-labels` when a cluster differs.
 
 ```mermaid
 flowchart TB
-    C["Caller Pod"] --> E["Source egress allowance"]
-    E --> I["Destination ingress allowance"]
-    I --> D["Destination Pod"]
-    N["Policy-capable network implementation"] --> E
-    N --> I
+    C["shuttle Pod"] -->|"UDP and TCP 53"| D["CoreDNS Pods in kube-system"]
+    C -->|"TCP 80"| B["bridge Pods"]
+    C -.->|"dropped"| P["probe Pods"]
 ```
 
-A connection must satisfy each applicable isolated direction under an enforcing network implementation.
+The egress policy opens two paths from the client, and every other destination is dropped.
 
-You can now calculate declared network allowances and state what their inspection cannot prove. Enforcement verification needs the intended caller and a deliberately disallowed caller, not merely the existence of a policy object.
+## Replies and established connections
+
+A policy describes who may start a connection. The reply to an allowed connection is allowed automatically. When `shuttle` connects to `bridge`, the answer packets travel back although the `bridge` side has no egress rule for them. You do not write a rule for the return direction, and a rule for the return direction would permit new connections in the other direction, which is not what you want.
+
+Because of this, a policy on one side of a connection is enough to block it. If either the egress policy of the client or the ingress policy of the server drops the first packet, the connection never starts. Both policies must allow the connection when both ends are isolated.
+
+## What enforces the policy
+
+The API server stores a NetworkPolicy and does nothing else with it. The network plugin on each node watches the objects and programs packet filters in the kernel so that selected Pods are isolated. Calico does this with its own rules in the node firewall. A plugin without policy support accepts the object and ignores it, and the API shows no warning.
+
+You can test enforcement without reading any plugin file: create a policy for a test Pod that denies everything and check that a request is dropped. If it still succeeds, the plugin does not enforce policies.
+
+## Reading the result
+
+You wrote an egress policy for a client, kept DNS working by allowing UDP and TCP port 53 to the CoreDNS Pods and saw that return traffic needs no rule. Egress policy is stricter in practice than ingress policy, because it must name every dependency of the client, including the resolver. When a client suddenly fails to resolve names after an egress policy was applied, the missing DNS rule is the first thing to check.
 
 ## Common pitfalls
 
 > [!WARNING]
-> NetworkPolicy rules are additive allowances within isolated directions. Source egress and destination ingress can both matter, and enforcement requires a supporting network implementation.
+> An egress policy without a DNS rule breaks name resolution for the selected Pods. Allowing the DNS Service ClusterIP with an `ipBlock` does not work in every plugin, so select the CoreDNS Pods instead. A policy only matters if the plugin enforces it: always test with a request that should be dropped.

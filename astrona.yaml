@@ -1,8 +1,10 @@
+---
 training:
   id: ATS026
   title: 'CKA: Services & Networking'
-  description: Detailed reading lessons and reusable YAML knowledge checks covering
-    the CKA domain. No new labs or playgrounds. Technical content remains draft for
+  description: Detailed reading lessons, ungraded module playgrounds, graded labs,
+    section capstones and knowledge-check quizzes covering the CKA Services & Networking
+    domain. Live execution of labs is pending; technical content remains draft for
     review.
   certification:
     name: Certified Kubernetes Administrator
@@ -36,9 +38,10 @@ modules:
     path: sections/intro/course-03-how-this-course-is-made.md
 - id: module-010
   title: Understand connectivity between Pods
-  description: Developed explanations and application reasoning for Understand connectivity
-    between Pods.
-  maturity: alpha
+  description: Pod addresses and the network implementation, name resolution, an ordered
+    method to diagnose failed Pod-to-Pod requests, and a capstone that repairs three
+    unreachable workloads.
+  status: alpha
   content:
   - type: reading
     title: Understand connectivity between Pods
@@ -53,7 +56,7 @@ modules:
     title: DNS And Service Discovery
     path: sections/section-010/module-01/course-02-dns-and-service-discovery.md
   - type: reading
-    title: Trace DNS To A Service Address — Task
+    title: Trace DNS To A Service Address - Task
     path: sections/section-010/module-01/labs/lab-01/question.md
   - type: lab
     title: Trace DNS To A Service Address
@@ -69,19 +72,69 @@ modules:
     - cka
     - dns-discovery
   - type: reading
-    title: Trace DNS To A Service Address — Solution
-    path: sections/section-010/module-01/labs/lab-01/solution.md
+    title: Summary
+    path: sections/section-010/module-01/course-03-summary.md
   - type: reading
-    title: 'Guided Practice: Trace DNS To A Service Address'
-    path: sections/section-010/module-01/course-03-guided-practice.md
+    title: Diagnose Pod-To-Pod Connectivity
+    path: sections/section-010/module-02/course.md
+  - type: reading
+    title: A Triage Method And The Tools
+    path: sections/section-010/module-02/course-01-a-triage-method-and-the-tools.md
+  - type: reading
+    title: Common Failure Causes
+    path: sections/section-010/module-02/course-02-common-failure-causes.md
+  - type: reading
+    title: Repair Pods That Cannot Be Reached - Task
+    path: sections/section-010/module-02/labs/lab-01/question.md
+  - type: lab
+    title: Repair Pods That Cannot Be Reached
+    path: sections/section-010/module-02/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: connectivity-diagnosis
+    task_kind: troubleshoot
+    learning_goals:
+    - Repair a server that listens only on the loopback address.
+    - Repair a Service whose targetPort does not match the container port.
+    tags:
+    - cka
+    - connectivity-diagnosis
+    - targetport
   - type: reading
     title: Summary
-    path: sections/section-010/module-01/course-04-summary.md
+    path: sections/section-010/module-02/course-03-summary.md
+  - type: reading
+    title: Repair Three Unreachable Workloads - Task
+    path: sections/section-010/capstone/labs/lab-01/question.md
+  - type: lab
+    title: Understand Connectivity Between Pods Capstone
+    path: sections/section-010/capstone/labs/lab-01
+    difficulty: advanced
+    estimated_duration: 30m
+    topic: connectivity-diagnosis
+    task_kind: troubleshoot
+    learning_goals:
+    - Read how a request ends and name the failing layer for three workloads.
+    - Repair a loopback bind, a wrong targetPort and a selector that matches no Pod
+      without changing the client contract.
+    tags:
+    - cka
+    - connectivity-diagnosis
+    - endpointslice
+    - targetport
+  - type: quiz
+    title: 'Knowledge Check: Understand connectivity between Pods'
+    path: sections/section-010/quiz.yaml
+    pass_score: 70
 - id: module-020
   title: Define and enforce Network Policies
-  description: Developed explanations and application reasoning for Define and enforce
-    Network Policies.
-  maturity: alpha
+  description: 'Makes the reader able to restrict Pod traffic with NetworkPolicy:
+    isolate a namespace, admit named peers, keep DNS working under egress policies
+    and troubleshoot a policy that blocks too much or too little. Uses kind with the
+    Calico network plugin, which enforces policies.
+
+'
+  status: alpha
   content:
   - type: reading
     title: Define and enforce Network Policies
@@ -102,14 +155,14 @@ modules:
     estimated_duration: 25m
     topic: networkpolicy-ingress
     task_kind: build
-    learning_goals:
-    - Enforce both an allowed same-namespace peer and a denied peer in another namespace.
     tags:
     - cka
     - networkpolicy-ingress
-  - type: reading
-    title: Allow One Peer And Deny Another — Solution
-    path: sections/section-020/module-01/labs/lab-01/solution.md
+    learning_goals:
+    - Enforce both an allowed same-namespace peer and a denied peer in another namespace
+    resources:
+    - name: Kubernetes network policies
+      url: https://kubernetes.io/docs/concepts/services-networking/network-policies/
   - type: reading
     title: NetworkPolicy And Allowed Connections
     path: sections/section-020/module-01/course-02-networkpolicy-and-allowed-connections.md
@@ -123,26 +176,107 @@ modules:
     estimated_duration: 25m
     topic: networkpolicy-egress
     task_kind: build
-    learning_goals:
-    - Allow name resolution and application access while denying a healthy unrelated
-      listener.
     tags:
     - cka
     - networkpolicy-egress
-  - type: reading
-    title: Allow DNS And One Application Dependency — Solution
-    path: sections/section-020/module-01/labs/lab-02/solution.md
-  - type: reading
-    title: 'Guided Practice: Allow One Peer And Deny Another'
-    path: sections/section-020/module-01/course-03-guided-practice.md
+    learning_goals:
+    - Allow name resolution and application access while denying a healthy unrelated
+      listener
+    resources:
+    - name: Kubernetes network policies
+      url: https://kubernetes.io/docs/concepts/services-networking/network-policies/
   - type: reading
     title: Summary
-    path: sections/section-020/module-01/course-04-summary.md
+    path: sections/section-020/module-01/course-03-summary.md
+  - type: reading
+    title: Network Policy Patterns And Troubleshooting
+    path: sections/section-020/module-02/course.md
+  - type: reading
+    title: Default Deny And Namespace Isolation
+    path: sections/section-020/module-02/course-01-default-deny-and-namespace-isolation.md
+  - type: reading
+    title: Isolate A Namespace With Network Policies — Task
+    path: sections/section-020/module-02/labs/lab-01/question.md
+  - type: lab
+    title: Isolate A Namespace With Network Policies
+    path: sections/section-020/module-02/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: networkpolicy-isolation
+    task_kind: build
+    tags:
+    - cka
+    - networkpolicy
+    - default-deny
+    - namespace-selector
+    learning_goals:
+    - Isolate a namespace with a default-deny ingress policy
+    - Keep traffic inside the namespace and admit one named peer from another namespace
+    resources:
+    - name: Kubernetes network policies
+      url: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  - type: reading
+    title: Verifying And Troubleshooting Policies
+    path: sections/section-020/module-02/course-02-verifying-and-troubleshooting-policies.md
+  - type: reading
+    title: Repair A Network Policy — Task
+    path: sections/section-020/module-02/labs/lab-02/question.md
+  - type: lab
+    title: Repair A Network Policy
+    path: sections/section-020/module-02/labs/lab-02
+    difficulty: intermediate
+    estimated_duration: 20m
+    topic: networkpolicy-troubleshooting
+    task_kind: build
+    tags:
+    - cka
+    - networkpolicy
+    - troubleshooting
+    learning_goals:
+    - Find a wrong label and a wrong port in a policy by comparing it with real Pods
+    - Repair the policy without widening it
+    resources:
+    - name: Kubernetes network policies
+      url: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  - type: reading
+    title: Summary
+    path: sections/section-020/module-02/course-03-summary.md
+  - type: reading
+    title: Network Policies Capstone — Task
+    path: sections/section-020/capstone/labs/lab-01/question.md
+  - type: lab
+    title: Network Policies Capstone
+    path: sections/section-020/capstone/labs/lab-01
+    difficulty: advanced
+    estimated_duration: 35m
+    topic: networkpolicy
+    task_kind: build
+    tags:
+    - cka
+    - networkpolicy
+    - default-deny
+    - egress
+    - dns
+    - namespace-selector
+    learning_goals:
+    - Deny all traffic in a namespace and allow one client only DNS and one backend
+    - Admit exactly two named clients to a backend across namespaces
+    resources:
+    - name: Kubernetes network policies
+      url: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  - type: quiz
+    title: 'Knowledge Check: Define and enforce Network Policies'
+    path: sections/section-020/quiz.yaml
+    pass_score: 70
 - id: module-030
   title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
-  description: Developed explanations and application reasoning for Use ClusterIP,
-    NodePort, LoadBalancer service types and endpoints.
-  maturity: alpha
+  description: 'Service types, selectors, ports and EndpointSlices, external entry
+    with NodePort and LoadBalancer, diagnosis of a Service with no working backend,
+    headless, ExternalName and selectorless Services, session affinity, traffic policy
+    and kube-proxy modes. Two modules with playgrounds and labs, and a capstone.
+
+'
+  status: alpha
   content:
   - type: reading
     title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
@@ -154,7 +288,7 @@ modules:
     title: Selectors, Ports And Backends
     path: sections/section-030/module-01/course-01-selectors-ports-and-backends.md
   - type: reading
-    title: Repair A Service Selector — Task
+    title: Repair A Service Selector - Task
     path: sections/section-030/module-01/labs/lab-01/question.md
   - type: lab
     title: Repair A Service Selector
@@ -170,13 +304,10 @@ modules:
     - cka
     - service-selector
   - type: reading
-    title: Repair A Service Selector — Solution
-    path: sections/section-030/module-01/labs/lab-01/solution.md
-  - type: reading
     title: External Entry And Application Routing
     path: sections/section-030/module-01/course-02-external-entry-and-application-routing.md
   - type: reading
-    title: Reach A Service Through Its NodePort — Task
+    title: Reach A Service Through Its NodePort - Task
     path: sections/section-030/module-01/labs/lab-02/question.md
   - type: lab
     title: Reach A Service Through Its NodePort
@@ -191,19 +322,72 @@ modules:
     - cka
     - nodeport
   - type: reading
-    title: Reach A Service Through Its NodePort — Solution
-    path: sections/section-030/module-01/labs/lab-02/solution.md
-  - type: reading
-    title: 'Guided Practice: Repair A Service Selector'
+    title: Diagnosing A Service With No Working Backend
     path: sections/section-030/module-01/course-03-guided-practice.md
   - type: reading
     title: Summary
     path: sections/section-030/module-01/course-04-summary.md
+  - type: reading
+    title: Headless Services, ExternalName And Traffic Policy
+    path: sections/section-030/module-02/course.md
+  - type: reading
+    title: Headless, ExternalName And Selectorless Services
+    path: sections/section-030/module-02/course-01-headless-externalname-and-selectorless-services.md
+  - type: reading
+    title: Session Affinity, Traffic Policy And kube-proxy
+    path: sections/section-030/module-02/course-02-session-affinity-traffic-policy-and-kube-proxy.md
+  - type: reading
+    title: Headless Service, ExternalName And Session Affinity - Task
+    path: sections/section-030/module-02/labs/lab-01/question.md
+  - type: lab
+    title: Headless Service, ExternalName And Session Affinity
+    path: sections/section-030/module-02/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: service-variants
+    task_kind: build
+    learning_goals:
+    - Create a headless Service and verify that DNS returns the Pod addresses
+    - Create an ExternalName Service that points to a Service in another namespace
+    - Turn on ClientIP session affinity on an existing Service
+    tags:
+    - cka
+    - headless-service
+    - externalname
+    - session-affinity
+  - type: reading
+    title: Summary
+    path: sections/section-030/module-02/course-03-summary.md
+  - type: reading
+    title: Services And Endpoints Capstone - Task
+    path: sections/section-030/capstone/labs/lab-01/question.md
+  - type: lab
+    title: Services And Endpoints Capstone
+    path: sections/section-030/capstone/labs/lab-01
+    difficulty: advanced
+    estimated_duration: 30m
+    topic: services-endpoints
+    task_kind: build
+    learning_goals:
+    - Repair a Service that has a wrong selector and a wrong target port
+    - Expose a Service on a fixed node port and verify it on every node
+    - Add a headless Service and ClientIP session affinity
+    tags:
+    - cka
+    - service-selector
+    - nodeport
+    - headless-service
+    - session-affinity
+  - type: quiz
+    title: 'Knowledge Check: Use ClusterIP, NodePort, LoadBalancer service types and
+      endpoints'
+    path: sections/section-030/quiz.yaml
+    pass_score: 70
 - id: module-040
   title: Use the Gateway API to manage Ingress traffic
-  description: Developed explanations and application reasoning for Use the Gateway
-    API to manage Ingress traffic.
-  maturity: alpha
+  description: Choose a Gateway class and listener, attach routes, match, split and
+    rewrite traffic, and allow routes and Services across namespaces.
+  status: alpha
   content:
   - type: reading
     title: Use the Gateway API to manage Ingress traffic
@@ -214,6 +398,9 @@ modules:
   - type: reading
     title: Gateway API Roles, Listeners And Attached Routes
     path: sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+  - type: reading
+    title: Routes And Status Conditions
+    path: sections/section-040/module-01/course-02-routes-and-status-conditions.md
   - type: reading
     title: Attach An HTTPRoute To A Gateway — Task
     path: sections/section-040/module-01/labs/lab-01/question.md
@@ -233,16 +420,75 @@ modules:
     title: Attach An HTTPRoute To A Gateway — Solution
     path: sections/section-040/module-01/labs/lab-01/solution.md
   - type: reading
-    title: 'Guided Practice: Attach An HTTPRoute To A Gateway'
-    path: sections/section-040/module-01/course-02-guided-practice.md
-  - type: reading
     title: Summary
     path: sections/section-040/module-01/course-03-summary.md
+  - type: reading
+    title: Matches, Weights, Filters And Cross-Namespace Routes
+    path: sections/section-040/module-02/course.md
+  - type: reading
+    title: Matches, Precedence And Weighted Backends
+    path: sections/section-040/module-02/course-01-matches-precedence-and-weights.md
+  - type: reading
+    title: 'Filters: Redirect, Rewrite And Header Changes'
+    path: sections/section-040/module-02/course-02-filters-redirect-rewrite-and-headers.md
+  - type: reading
+    title: Route, Split And Rewrite Traffic With HTTPRoute — Task
+    path: sections/section-040/module-02/labs/lab-01/question.md
+  - type: lab
+    title: Route, Split And Rewrite Traffic With HTTPRoute
+    path: sections/section-040/module-02/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 30m
+    topic: gateway-api-routing
+    task_kind: build
+    learning_goals:
+    - Choose a rule with a header match and a path prefix and predict match precedence.
+    - Redirect, rewrite and add a header with HTTPRoute filters.
+    tags:
+    - cka
+    - gateway-api
+    - httproute-filters
+  - type: reading
+    title: Route, Split And Rewrite Traffic With HTTPRoute — Solution
+    path: sections/section-040/module-02/labs/lab-01/solution.md
+  - type: reading
+    title: Cross-Namespace Routes And ReferenceGrants
+    path: sections/section-040/module-02/course-03-cross-namespace-routes-and-reference-grants.md
+  - type: reading
+    title: Summary
+    path: sections/section-040/module-02/course-04-summary.md
+  - type: reading
+    title: Repair Gateway Routes Across Namespaces — Task
+    path: sections/section-040/capstone/labs/lab-01/question.md
+  - type: lab
+    title: Repair Gateway Routes Across Namespaces
+    path: sections/section-040/capstone/labs/lab-01
+    difficulty: advanced
+    estimated_duration: 40m
+    topic: gateway-api-cross-namespace
+    task_kind: troubleshooting
+    learning_goals:
+    - Read route conditions and tell a refused attachment from a refused Service reference.
+    - Repair attachment with a namespace label and a Service reference with a narrow
+      ReferenceGrant.
+    - Correct a canary header rule and reversed weights without widening access.
+    tags:
+    - cka
+    - gateway-api
+    - reference-grant
+    - capstone
+  - type: reading
+    title: Repair Gateway Routes Across Namespaces — Solution
+    path: sections/section-040/capstone/labs/lab-01/solution.md
+  - type: quiz
+    title: Knowledge Check
+    path: sections/section-040/quiz.yaml
+    pass_score: 70
 - id: module-050
   title: Know how to use Ingress controllers and Ingress resources
-  description: Developed explanations and application reasoning for Know how to use
-    Ingress controllers and Ingress resources.
-  maturity: alpha
+  description: Choose a controller and class, route by host and path, and diagnose
+    an external request through an Ingress.
+  status: alpha
   content:
   - type: reading
     title: Know how to use Ingress controllers and Ingress resources
@@ -269,9 +515,6 @@ modules:
     - cka
     - ingress-routing
   - type: reading
-    title: Route A Matching Host Through Ingress — Solution
-    path: sections/section-050/module-01/labs/lab-01/solution.md
-  - type: reading
     title: Tracing An External Request To The Application
     path: sections/section-050/module-01/course-02-tracing-an-external-request-to-the-application.md
   - type: reading
@@ -291,29 +534,79 @@ modules:
     - cka
     - ingress-tls
   - type: reading
-    title: Verify TLS Termination And Server Identity — Solution
-    path: sections/section-050/module-01/labs/lab-02/solution.md
-  - type: reading
-    title: 'Guided Practice: Route A Matching Host Through Ingress'
-    path: sections/section-050/module-01/course-03-guided-practice.md
-  - type: reading
     title: Summary
     path: sections/section-050/module-01/course-04-summary.md
+  - type: reading
+    title: Choose A Controller, Class, Paths And Hosts
+    path: sections/section-050/module-02/course.md
+  - type: reading
+    title: IngressClass And The Default Class
+    path: sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  - type: reading
+    title: Hosts, Path Types And The Default Backend
+    path: sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  - type: reading
+    title: Route With The Default Class, Path Types And A Default Backend — Task
+    path: sections/section-050/module-02/labs/lab-01/question.md
+  - type: lab
+    title: Route With The Default Class, Path Types And A Default Backend
+    path: sections/section-050/module-02/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: ingress-default-class-paths
+    task_kind: build
+    learning_goals:
+    - Make an IngressClass the default class and create an Ingress that relies on
+      it.
+    - Route by Prefix and Exact paths and set a default backend.
+    tags:
+    - cka
+    - ingress-class
+    - ingress-paths
+  - type: reading
+    title: Summary
+    path: sections/section-050/module-02/course-03-summary.md
+  - type: reading
+    title: Publish An Application Through An Ingress With TLS — Task
+    path: sections/section-050/capstone/labs/lab-01/question.md
+  - type: lab
+    title: Publish An Application Through An Ingress With TLS
+    path: sections/section-050/capstone/labs/lab-01
+    difficulty: advanced
+    estimated_duration: 35m
+    topic: ingress-publish-tls
+    task_kind: troubleshooting
+    learning_goals:
+    - Find and repair a wrong class, an empty endpoint set, a wrong backend port and
+      a missing TLS section.
+    - Verify HTTPS routing for two hosts through the controller with certificate verification
+      on.
+    tags:
+    - cka
+    - ingress-tls
+    - capstone
+  - type: quiz
+    title: Knowledge Check
+    path: sections/section-050/quiz.yaml
+    pass_score: 70
 - id: module-060
   title: Understand and use CoreDNS
-  description: Developed explanations and application reasoning for Understand and
-    use CoreDNS.
-  maturity: alpha
+  description: Follows a DNS query from the Pod to CoreDNS, then changes the Corefile,
+    Pod DNS settings, headless Service records and CoreDNS replicas in a running cluster.
+  status: alpha
   content:
   - type: reading
     title: Understand and use CoreDNS
     path: sections/section-060/README.md
   - type: reading
-    title: CoreDNS Configuration And Resolution Diagnosis
+    title: How Pods Resolve Names With CoreDNS
     path: sections/section-060/module-01/course.md
   - type: reading
-    title: CoreDNS Configuration And Cluster Name Resolution
+    title: 'From A Pod To An Answer: The Cluster Query Path'
     path: sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
+  - type: reading
+    title: Corefile Errors And How To Repair Them
+    path: sections/section-060/module-01/course-02-corefile-errors-and-repair.md
   - type: reading
     title: Restore A Broken CoreDNS Configuration — Task
     path: sections/section-060/module-01/labs/lab-01/question.md
@@ -321,21 +614,106 @@ modules:
     title: Restore A Broken CoreDNS Configuration
     path: sections/section-060/module-01/labs/lab-01
     difficulty: intermediate
-    estimated_duration: 25m
-    topic: coredns-repair
-    task_kind: build
-    learning_goals:
-    - Trace failed name resolution to a Corefile syntax error and restore the saved
-      configuration.
+    estimated_duration: 20m
+    topic: coredns-configuration
+    task_kind: troubleshoot
     tags:
     - cka
-    - coredns-repair
-  - type: reading
-    title: Restore A Broken CoreDNS Configuration — Solution
-    path: sections/section-060/module-01/labs/lab-01/solution.md
-  - type: reading
-    title: 'Guided Practice: Restore A Broken CoreDNS Configuration'
-    path: sections/section-060/module-01/course-02-guided-practice.md
+    - coredns
+    - corefile
+    learning_goals:
+    - Read the CoreDNS logs and find the parse error in a broken Corefile.
+    - Restore the Corefile in the ConfigMap and make CoreDNS load it.
+    - Prove that cluster names and outside names resolve again.
+    resources:
+    - name: Customizing DNS Service
+      url: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/
+    - name: Debugging DNS Resolution
+      url: https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
   - type: reading
     title: Summary
     path: sections/section-060/module-01/course-03-summary.md
+  - type: reading
+    title: Customise And Debug CoreDNS
+    path: sections/section-060/module-02/course.md
+  - type: reading
+    title: Corefile Plugins, Stub Domains And Rewrite
+    path: sections/section-060/module-02/course-01-corefile-plugins-stub-domains-and-rewrite.md
+  - type: reading
+    title: Pod DNS Policy, dnsConfig, ndots And Search Domains
+    path: sections/section-060/module-02/course-02-pod-dns-policy-dnsconfig-and-ndots.md
+  - type: reading
+    title: Forward A Stub Domain And Tune Pod DNS — Task
+    path: sections/section-060/module-02/labs/lab-01/question.md
+  - type: lab
+    title: Forward A Stub Domain And Tune Pod DNS
+    path: sections/section-060/module-02/labs/lab-01
+    difficulty: intermediate
+    estimated_duration: 25m
+    topic: coredns-customisation
+    task_kind: build
+    tags:
+    - cka
+    - coredns
+    - stub-domain
+    - dnsconfig
+    - ndots
+    learning_goals:
+    - Forward the zone partner.example to another DNS server with a second server
+      block.
+    - Keep the default block so that cluster names still resolve.
+    - Set ndots in the dnsConfig of a Deployment and check the resolver file.
+    resources:
+    - name: Customizing DNS Service
+      url: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/
+    - name: DNS for Services and Pods
+      url: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
+    - name: CoreDNS forward plugin
+      url: https://coredns.io/plugins/forward/
+  - type: reading
+    title: DNS Records For Headless Services And StatefulSet Pods
+    path: sections/section-060/module-02/course-03-headless-services-and-pod-dns-records.md
+  - type: reading
+    title: Scaling And Debugging CoreDNS
+    path: sections/section-060/module-02/course-04-scaling-and-debugging-coredns.md
+  - type: reading
+    title: Summary
+    path: sections/section-060/module-02/course-05-summary.md
+  - type: reading
+    title: 'CoreDNS Capstone: Headless Records, Rewrite, Own Resolver And Scale —
+      Task'
+    path: sections/section-060/capstone/labs/lab-01/question.md
+  - type: lab
+    title: 'CoreDNS Capstone: Headless Records, Rewrite, Own Resolver And Scale'
+    path: sections/section-060/capstone/labs/lab-01
+    difficulty: advanced
+    estimated_duration: 40m
+    topic: coredns-integration
+    task_kind: build
+    tags:
+    - cka
+    - coredns
+    - headless-service
+    - rewrite
+    - dnspolicy
+    - scaling
+    learning_goals:
+    - Recreate a Service as headless so that StatefulSet Pods get DNS names.
+    - Add a rewrite rule to the Corefile without losing the default block.
+    - Give a Deployment its own resolver with dnsPolicy None and dnsConfig.
+    - Scale CoreDNS and load the new configuration on every replica.
+    resources:
+    - name: DNS for Services and Pods
+      url: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
+    - name: Customizing DNS Service
+      url: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/
+    - name: CoreDNS rewrite plugin
+      url: https://coredns.io/plugins/rewrite/
+  - type: quiz
+    title: 'Knowledge Check: Understand and use CoreDNS'
+    path: sections/section-060/quiz.yaml
+    pass_score: 70
+  - type: quiz
+    title: 'Final Knowledge Check: Services & Networking'
+    path: sections/final-domain-quiz.yaml
+    pass_score: 70

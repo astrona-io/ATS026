@@ -1,0 +1,339 @@
+# Knowledge check for section 010. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats026-010
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-010
+  title: Understand connectivity between Pods
+questions:
+- id: ats026-010-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain which network resources the containers of one Pod share
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: A Pod has two containers, `web` and `metrics`. `metrics` must read a status
+    page that `web` serves on port 8080. Which address does `metrics` use?
+  options:
+  - id: a
+    text: "`127.0.0.1:8080`"
+    explanation: Correct. All containers of a Pod join one network namespace, so they
+      share the Pod IP and the port space. `127.0.0.1` reaches the other container.
+  - id: b
+    text: The IP address of the node that runs the Pod.
+    explanation: The node address is not used inside a Pod; the Pod has its own address.
+  - id: c
+    text: A second Pod IP that the CNI plugin gives to `metrics`.
+    explanation: A Pod has one IP address shared by all its containers, not one per
+      container.
+  - id: d
+    text: Only a Service name; containers of one Pod cannot reach each other directly.
+    explanation: The containers share one network namespace, so a Service is not needed.
+  correct_option: a
+  explanation: Correct. All containers of a Pod join one network namespace, so they
+    share the Pod IP and the port space. `127.0.0.1` reaches the other container.
+- id: ats026-010-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Name the components that assign Pod addresses and carry traffic
+    between nodes
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: Which component creates the network interface and assigns the IP address
+    of a new Pod?
+  options:
+  - id: a
+    text: The kube-proxy on the node.
+    explanation: kube-proxy implements Service forwarding, not Pod addresses.
+  - id: b
+    text: The CNI plugin, called by the container runtime when the Pod sandbox is
+      created.
+    explanation: Correct. The kubelet asks the runtime to create the sandbox, and
+      the runtime calls the CNI plugin, which creates the interface, assigns the address
+      and sets routes.
+  - id: c
+    text: The CoreDNS Pods.
+    explanation: CoreDNS answers name queries and assigns no addresses.
+  - id: d
+    text: The kube-scheduler.
+    explanation: The scheduler only chooses the node for the Pod.
+  correct_option: b
+  explanation: Correct. The kubelet asks the runtime to create the sandbox, and the
+    runtime calls the CNI plugin, which creates the interface, assigns the address
+    and sets routes.
+- id: ats026-010-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Reach a Pod by its IP address from a Pod in another namespace
+  source_readings:
+  - sections/section-010/module-01/course-01-pod-addresses-and-network-implementation.md
+  prompt: The `drifter` Pod in `outpost` sends a request to the Pod IP of `scout`
+    in `starfleet` and gets an answer. No NetworkPolicy exists. What does this show?
+  options:
+  - id: a
+    text: The request only worked because a Service named `scout` exists.
+    explanation: The request used the Pod IP directly, so no Service was involved.
+  - id: b
+    text: The Pods must run on the same node.
+    explanation: The network model requires that Pods reach each other across nodes
+      without address translation.
+  - id: c
+    text: 'A namespace is not a network boundary: Pods reach each other by IP across
+      namespaces and nodes unless a policy blocks it.'
+    explanation: Correct. Namespaces group objects but do not isolate the network.
+  - id: d
+    text: DNS translated the Pod IP into a Service address.
+    explanation: No name was resolved because the request used an IP address.
+  correct_option: c
+  explanation: Correct. Namespaces group objects but do not isolate the network.
+- id: ats026-010-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Read the resolver settings of a Pod and explain each line
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: In `/etc/resolv.conf` of a Pod, the `nameserver` line holds one address.
+    Which object does it belong to?
+  options:
+  - id: a
+    text: The ClusterIP of the `kube-dns` Service in `kube-system`, which forwards
+      to the CoreDNS Pods.
+    explanation: Correct. The kubelet writes the ClusterIP of the cluster DNS Service
+      into the file, and the Service forwards queries to CoreDNS Pods.
+  - id: b
+    text: The IP of the node that runs the Pod.
+    explanation: The resolver does not ask the node by default.
+  - id: c
+    text: The IP of the API server.
+    explanation: The API server does not answer name queries.
+  - id: d
+    text: The Pod IP of the first CoreDNS Pod.
+    explanation: The file names the Service address, which stays stable when CoreDNS
+      Pods are replaced.
+  correct_option: a
+  explanation: Correct. The kubelet writes the ClusterIP of the cluster DNS Service
+    into the file, and the Service forwards queries to CoreDNS Pods.
+- id: ats026-010-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Resolve a Service in the same namespace and in another namespace
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: A client in `starfleet` requests `http://probe.outpost/`. Which Service
+    answers?
+  options:
+  - id: a
+    text: The `probe` Service in `starfleet`, because the client namespace is always
+      used.
+    explanation: "`probe.outpost` names the namespace, so the client namespace is
+      not used."
+  - id: b
+    text: The `probe` Service in `outpost`, because the second search suffix expands
+      the name.
+    explanation: Correct. `probe.outpost` has fewer dots than `ndots` 5, so the search
+      list is tried and `probe.outpost.svc.cluster.local` exists.
+  - id: c
+    text: 'No Service: a name with a dot is never expanded.'
+    explanation: With `ndots:5` a name with fewer than five dots is expanded with
+      the search suffixes.
+  - id: d
+    text: The `probe` Service in `kube-system`.
+    explanation: "`kube-system` is not named in the request."
+  correct_option: b
+  explanation: Correct. `probe.outpost` has fewer dots than `ndots` 5, so the search
+    list is tried and `probe.outpost.svc.cluster.local` exists.
+- id: ats026-010-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Tell a resolution failure from a connection failure by the way
+    the client fails
+  source_readings:
+  - sections/section-010/module-01/course-02-dns-and-service-discovery.md
+  prompt: A request from a Pod ends with curl exit code 6. Where does the failure
+    come from?
+  options:
+  - id: a
+    text: The name could not be resolved, so no connection was made.
+    explanation: Correct. Exit code 6 means curl could not resolve the host.
+  - id: b
+    text: The destination port has no listener.
+    explanation: A closed port gives a refusal, exit code 7.
+  - id: c
+    text: A NetworkPolicy dropped the packets.
+    explanation: A policy drop gives a timeout, exit code 28.
+  - id: d
+    text: The server answered with HTTP 500.
+    explanation: An HTTP status is a response, so the request completed.
+  correct_option: a
+  explanation: Correct. Exit code 6 means curl could not resolve the host.
+- id: ats026-010-q07
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Apply an ordered triage of the layers of a failing Pod-to-Pod
+    request
+  source_readings:
+  - sections/section-010/module-02/course-01-a-triage-method-and-the-tools.md
+  prompt: A request from `shuttle` to a Service fails. What is the correct first step?
+  options:
+  - id: a
+    text: Delete the NetworkPolicies in the namespace.
+    explanation: Deleting policies changes the system before the cause is known.
+  - id: b
+    text: Restart the CNI plugin on every node.
+    explanation: Restarting the plugin is a large change without evidence.
+  - id: c
+    text: Send one bounded request, note how it ends, and use that result to pick
+      the layer to test.
+    explanation: Correct. How the request ends (refused, timeout, name error, HTTP
+      error) names the layer to inspect first.
+  - id: d
+    text: Raise the Service `port` to a higher number.
+    explanation: The Service port is not a first suspect and changing it breaks clients.
+  correct_option: c
+  explanation: Correct. How the request ends (refused, timeout, name error, HTTP error)
+    names the layer to inspect first.
+- id: ats026-010-q08
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Start an ephemeral debug container in a running Pod with kubectl
+    debug
+  source_readings:
+  - sections/section-010/module-02/course-01-a-triage-method-and-the-tools.md
+  prompt: A distroless container has no shell and no curl. You must test its listener
+    from inside the Pod network namespace. What do you use?
+  options:
+  - id: a
+    text: "`kubectl debug` to add an ephemeral container with tools to the running
+      Pod."
+    explanation: Correct. An ephemeral container joins the Pod network namespace,
+      so it can test `127.0.0.1` and the Pod IP without changing the Pod.
+  - id: b
+    text: "`kubectl cp` to copy curl into the container filesystem."
+    explanation: Copying a binary into an image without a shell is unreliable and
+      changes the container.
+  - id: c
+    text: "`kubectl rollout restart` with a different image."
+    explanation: Changing the image changes the workload under test.
+  - id: d
+    text: "`kubectl delete pod` and wait for a new Pod."
+    explanation: A new Pod loses the state you want to inspect.
+  correct_option: a
+  explanation: Correct. An ephemeral container joins the Pod network namespace, so
+    it can test `127.0.0.1` and the Pod IP without changing the Pod.
+- id: ats026-010-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Find a server that listens only on the loopback address
+  source_readings:
+  - sections/section-010/module-02/course-02-common-failure-causes.md
+  prompt: 'A Service forwards to `targetPort: 8080`, requests through the Service
+    are refused, and a request inside the same Pod to `127.0.0.1:8080` works. What
+    is the cause?'
+  options:
+  - id: a
+    text: The server listens only on `127.0.0.1`, so it refuses connections that arrive
+      on the Pod IP.
+    explanation: Correct. A bind to the loopback address accepts connections only
+      from inside the Pod. The server must listen on all addresses.
+  - id: b
+    text: The Service selector matches no Pod.
+    explanation: An empty selector gives a timeout, not a refusal.
+  - id: c
+    text: CoreDNS cannot resolve the Service name.
+    explanation: A name failure ends with curl exit code 6.
+  - id: d
+    text: A NetworkPolicy drops the packets.
+    explanation: A policy drop ends with a timeout, not a refusal.
+  correct_option: a
+  explanation: Correct. A bind to the loopback address accepts connections only from
+    inside the Pod. The server must listen on all addresses.
+- id: ats026-010-q10
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Find a Service whose targetPort does not match the container
+  source_readings:
+  - sections/section-010/module-02/course-02-common-failure-causes.md
+  prompt: 'A Service has `port: 80` and `targetPort: 8080`. Its EndpointSlice has
+    one ready address. The container listens on 9898. How does a request through the
+    Service end, and what is the correct repair?'
+  options:
+  - id: a
+    text: A timeout; delete the Pod.
+    explanation: A closed port answers with a refusal, not a timeout, and deleting
+      the Pod does not change the mapping.
+  - id: b
+    text: A refusal; set `targetPort` to 9898 or to the named container port.
+    explanation: Correct. The packet reaches the Pod and nothing listens on 8080,
+      so the connection is refused. A named `targetPort` also survives a change of
+      the port number.
+  - id: c
+    text: An HTTP 404; change the Service `port` to 9898.
+    explanation: The request never reaches the application, so no HTTP status is returned.
+      Clients keep using Service port 80.
+  - id: d
+    text: A name error; restart CoreDNS.
+    explanation: The name resolves; the failure is after resolution.
+  correct_option: b
+  explanation: Correct. The packet reaches the Pod and nothing listens on 8080, so
+    the connection is refused. A named `targetPort` also survives a change of the
+    port number.
+- id: ats026-010-q11
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Read EndpointSlices to see which Pods a Service selects
+  source_readings:
+  - sections/section-010/module-02/course-02-common-failure-causes.md
+  prompt: 'The Service `dock` resolves, but requests time out. The Pod `dock-abc`
+    is `Running` and `1/1` ready, and the Service selector is `app: docks`. The Pod
+    label is `app: dock`. What do the EndpointSlices of `dock` show?'
+  options:
+  - id: a
+    text: One ready address, because the Pod is ready.
+    explanation: A ready Pod is listed only when a Service selector matches its labels.
+  - id: b
+    text: No ready address, because the selector matches no Pod.
+    explanation: Correct. A label with no match selects nothing and gives no error.
+      The Service exists and resolves, and its EndpointSlice is empty.
+  - id: c
+    text: The address of the node.
+    explanation: EndpointSlices list Pod addresses, not node addresses.
+  - id: d
+    text: The address of CoreDNS.
+    explanation: EndpointSlices list the backends of this Service only.
+  correct_option: b
+  explanation: Correct. A label with no match selects nothing and gives no error.
+    The Service exists and resolves, and its EndpointSlice is empty.
+- id: ats026-010-q12
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Tell a NetworkPolicy drop from a closed port
+  source_readings:
+  - sections/section-010/module-02/course-02-common-failure-causes.md
+  prompt: A client request to a healthy Pod ends after the timeout, with no refusal
+    and no name error. The Service has a ready endpoint. Which check is next?
+  options:
+  - id: a
+    text: List the NetworkPolicy objects in the namespace of the destination and see
+      which ones select the destination Pod.
+    explanation: Correct. A policy drops packets silently, which the client sees as
+      a timeout. A policy matters only when its `podSelector` selects the destination
+      and the plugin enforces policies.
+  - id: b
+    text: Change the Service type to NodePort.
+    explanation: A NodePort adds an entry point and does not change the cause.
+  - id: c
+    text: Restart the kubelet on all nodes.
+    explanation: Restarting the kubelet does not affect policy.
+  - id: d
+    text: Add a second container to the Pod.
+    explanation: Adding a container does not affect delivery.
+  correct_option: a
+  explanation: Correct. A policy drops packets silently, which the client sees as
+    a timeout. A policy matters only when its `podSelector` selects the destination
+    and the plugin enforces policies.

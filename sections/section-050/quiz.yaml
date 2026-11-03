@@ -1,0 +1,327 @@
+# Knowledge check for section 050. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats026-050
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-050
+  title: Know how to use Ingress controllers and Ingress resources
+questions:
+- id: ats026-050-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain why an Ingress without a matching controller and IngressClass
+    does nothing
+  source_readings:
+  - sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+  - sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  prompt: 'A team creates an Ingress in `starfleet` with `ingressClassName: legacy`.
+    The API server accepts it, but requests for its host return a 404 from Traefik.
+    The class `legacy` names a controller string that no running program owns. What
+    is the cause?'
+  options:
+  - id: a
+    text: The Ingress has a syntax error that `kubectl apply` did not report.
+    explanation: The API server validates the object and accepted it, so the syntax
+      is valid.
+  - id: b
+    text: No controller owns the class `legacy`, so nothing handles the Ingress even
+      though the object is valid.
+    explanation: Correct. A controller handles only the classes it owns. The API server
+      accepts an Ingress with an unowned class and does not report an error.
+  - id: c
+    text: Traefik handles every class and needs a restart.
+    explanation: Traefik in this setup is started for the class `traefik` only.
+  - id: d
+    text: The Service port is wrong.
+    explanation: A wrong Service port is a different fault and does not depend on
+      the class.
+  correct_option: b
+  explanation: Correct. A controller handles only the classes it owns. The API server
+    accepts an Ingress with an unowned class and does not report an error.
+- id: ats026-050-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Make one IngressClass the default class and predict which Ingresses
+    it affects
+  source_readings:
+  - sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  prompt: 'The annotation `ingressclass.kubernetes.io/is-default-class: "true"` is
+    added to the IngressClass `traefik`. An Ingress named `early` was created before
+    that and has no `ingressClassName`. An Ingress named `late` is created after it
+    with no `ingressClassName`. What does `kubectl get ingress` show?'
+  options:
+  - id: a
+    text: "`traefik` for both."
+    explanation: The API server does not change existing Ingresses.
+  - id: b
+    text: "`<none>` for both."
+    explanation: The default class is assigned when the Ingress is created and when
+      the annotation exists.
+  - id: c
+    text: "`<none>` for `early` and `traefik` for `late`."
+    explanation: Correct. The API server writes the default class into an Ingress
+      at creation time only. `early` keeps an empty class.
+  - id: d
+    text: "`traefik` for `early` and `<none>` for `late`."
+    explanation: The order is reversed.
+  correct_option: c
+  explanation: Correct. The API server writes the default class into an Ingress at
+    creation time only. `early` keeps an empty class.
+- id: ats026-050-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Make one IngressClass the default class and predict which Ingresses
+    it affects
+  source_readings:
+  - sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  prompt: 'Two IngressClasses carry the annotation `ingressclass.kubernetes.io/is-default-class:
+    "true"`. A user applies an Ingress with no `ingressClassName`. What happens?'
+  options:
+  - id: a
+    text: The API server picks the class with the older creation time.
+    explanation: The API server does not choose between defaults.
+  - id: b
+    text: The API server refuses to create the Ingress because the default is ambiguous.
+    explanation: Correct. With more than one default class the API server prevents
+      the creation of Ingresses that have no class.
+  - id: c
+    text: The Ingress is created and every controller handles it.
+    explanation: Controllers handle only the classes they own.
+  - id: d
+    text: The Ingress is created with an empty class and no controller handles it.
+    explanation: Creation fails, so no object exists.
+  correct_option: b
+  explanation: Correct. With more than one default class the API server prevents the
+    creation of Ingresses that have no class.
+- id: ats026-050-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Write Exact and Prefix paths and predict which rule a request
+    matches
+  source_readings:
+  - sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+  - sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  prompt: An Ingress has one rule with the path `/app` and the path type `Prefix`.
+    Which request path does it match?
+  options:
+  - id: a
+    text: "`/apple`"
+    explanation: "`Prefix` compares whole path elements, and `apple` is a different
+      element than `app`."
+  - id: b
+    text: "`/app/home`"
+    explanation: Correct. `/app/home` has `/app` as its first element.
+  - id: c
+    text: "`/App`"
+    explanation: Matching is case sensitive.
+  - id: d
+    text: "`/ap`"
+    explanation: "`/ap` is shorter than the rule path."
+  correct_option: b
+  explanation: Correct. `/app/home` has `/app` as its first element.
+- id: ats026-050-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Write Exact and Prefix paths and predict which rule a request
+    matches
+  source_readings:
+  - sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  prompt: 'A rule has the path `/status` with `pathType: Exact`. Which request does
+    it match?'
+  options:
+  - id: a
+    text: "`/status/`"
+    explanation: "`Exact` does not match a trailing slash."
+  - id: b
+    text: "`/status/health`"
+    explanation: "`Exact` matches only the whole path."
+  - id: c
+    text: "`/status`"
+    explanation: Correct. `Exact` matches the whole path and is case sensitive.
+  - id: d
+    text: "`/Status`"
+    explanation: Matching is case sensitive.
+  correct_option: c
+  explanation: Correct. `Exact` matches the whole path and is case sensitive.
+- id: ats026-050-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Predict the rule that wins when several paths match
+  source_readings:
+  - sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  prompt: An Ingress has the `Prefix` paths `/app` (backend `scout`) and `/app/admin`
+    (backend `probe`). Which backend receives `/app/admin/users`?
+  options:
+  - id: a
+    text: "`scout`, because it is listed first."
+    explanation: The order of the paths does not decide.
+  - id: b
+    text: "`probe`, because the longest matching path wins."
+    explanation: Correct. When several paths match, the longest matching path wins.
+  - id: c
+    text: Both, in a split.
+    explanation: A request goes to one backend.
+  - id: d
+    text: The default backend.
+    explanation: Two rules match, so the default backend is not used.
+  correct_option: b
+  explanation: Correct. When several paths match, the longest matching path wins.
+- id: ats026-050-q07
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use a wildcard host and a default backend and state what each
+    one covers
+  source_readings:
+  - sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  prompt: An Ingress rule has the host `*.fleet.local`. Which Host header does it
+    match?
+  options:
+  - id: a
+    text: "`fleet.local`"
+    explanation: A wildcard needs one label in front of the suffix.
+  - id: b
+    text: "`a.b.fleet.local`"
+    explanation: A wildcard covers exactly one label.
+  - id: c
+    text: "`a.fleet.local`"
+    explanation: Correct. The wildcard matches one DNS label in front of the suffix.
+  - id: d
+    text: Every host.
+    explanation: A rule without a host matches every host, not a wildcard host.
+  correct_option: c
+  explanation: Correct. The wildcard matches one DNS label in front of the suffix.
+- id: ats026-050-q08
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Trace the Service backend port of an Ingress
+  source_readings:
+  - sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+  prompt: 'The Service `api` exposes `port: 80` with `targetPort: http`, and the container
+    listens on 8080. The Ingress backend must use which port?'
+  options:
+  - id: a
+    text: "`port.number: 8080`"
+    explanation: 8080 is the container port, which the Service does not expose.
+  - id: b
+    text: "`port.number: 80`"
+    explanation: Correct. The Ingress backend names a Service port. The Service then
+      maps it to the target port.
+  - id: c
+    text: "`port.number: 443`"
+    explanation: 443 is not exposed by the Service.
+  - id: d
+    text: Any port; the controller discovers the right one.
+    explanation: The backend must name a Service port.
+  correct_option: b
+  explanation: Correct. The Ingress backend names a Service port. The Service then
+    maps it to the target port.
+- id: ats026-050-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain what TLS termination at the controller protects
+  source_readings:
+  - sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
+  prompt: The controller terminates TLS for `probe.local` with a certificate for `probe.local`.
+    The backend Service uses plain HTTP. Which statement is correct?
+  options:
+  - id: a
+    text: The connection from the client to the controller is encrypted, and the connection
+      from the controller to the backend is plain HTTP unless configured otherwise.
+    explanation: Correct. Termination at the controller protects the client connection
+      only.
+  - id: b
+    text: The whole path is encrypted end to end.
+    explanation: The backend hop stays plain HTTP in this setup.
+  - id: c
+    text: The client does not need to verify the certificate.
+    explanation: Disabling verification removes the protection that the test checks.
+  - id: d
+    text: The backend receives HTTPS.
+    explanation: The controller decrypts the traffic and forwards plain HTTP.
+  correct_option: a
+  explanation: Correct. Termination at the controller protects the client connection
+    only.
+- id: ats026-050-q10
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Tell a response from the controller apart from a response from
+    the application
+  source_readings:
+  - sections/section-050/module-01/course-02-tracing-an-external-request-to-the-application.md
+  prompt: A request through the controller returns `404 page not found`. The `probe`
+    Pods log no request. Which conclusion fits best?
+  options:
+  - id: a
+    text: The application returned the 404.
+    explanation: The application logged no request, so it did not answer.
+  - id: b
+    text: The controller found no route for the request, for example because of host,
+      path, class or missing endpoints.
+    explanation: Correct. A controller body with no application log means that the
+      request ended at the controller.
+  - id: c
+    text: DNS failed.
+    explanation: A DNS failure ends before a response.
+  - id: d
+    text: The certificate is invalid.
+    explanation: A certificate error ends the connection before an HTTP response.
+  correct_option: b
+  explanation: Correct. A controller body with no application log means that the request
+    ended at the controller.
+- id: ats026-050-q11
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Name the evidence that shows why an Ingress is not handled
+  source_readings:
+  - sections/section-050/module-01/course-02-tracing-an-external-request-to-the-application.md
+  - sections/section-050/module-02/course-01-ingressclass-and-the-default-class.md
+  prompt: A route returns the controller 404 and the Ingress shows the right host,
+    path and Service port. Which check comes next?
+  options:
+  - id: a
+    text: Check that the Ingress class is owned by the running controller, that the
+      Service has ready endpoints and read the controller log.
+    explanation: Correct. The class, the endpoints and the controller log are the
+      next sources of evidence.
+  - id: b
+    text: Replace the Deployment image.
+    explanation: The image is not part of routing.
+  - id: c
+    text: Disable the certificate check.
+    explanation: This hides the fault.
+  - id: d
+    text: Scale the controller to zero.
+    explanation: This removes the controller.
+  correct_option: a
+  explanation: Correct. The class, the endpoints and the controller log are the next
+    sources of evidence.
+- id: ats026-050-q12
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain what a default backend answers
+  source_readings:
+  - sections/section-050/module-02/course-02-hosts-path-types-and-the-default-backend.md
+  prompt: An Ingress sets `spec.defaultBackend` to the Service `fallback` and has
+    rules for `/app` and `/status`. Which request reaches `fallback`?
+  options:
+  - id: a
+    text: "`/app/home`"
+    explanation: "`/app/home` matches the `/app` prefix."
+  - id: b
+    text: "`/status`"
+    explanation: "`/status` matches the Exact rule."
+  - id: c
+    text: "`/apple`"
+    explanation: Correct. `/apple` matches no rule, so the default backend answers.
+  - id: d
+    text: None; the default backend only works for an Ingress with no rules.
+    explanation: A default backend also serves requests that match no rule when rules
+      exist.
+  correct_option: c
+  explanation: Correct. `/apple` matches no rule, so the default backend answers.

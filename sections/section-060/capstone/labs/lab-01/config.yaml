@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# CoreDNS Capstone: Headless Records, Rewrite, Own Resolver And Scale (LAB). Graded against the live cluster.
+# Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-060-capstone-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - busybox:1.37.0
+      - coredns/coredns:1.12.0
+      - mccutchen/go-httpbin:2.25.0
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads, the partner DNS server and the faults
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: crew-pod-names
+      description: "crew-0 resolves to its Pod IP through a headless Service"
+      type: file
+      source: validation/validate-crew-pod-names.sh
+      hint: "Per-Pod names exist only when the Service named in serviceName is headless. The clusterIP field cannot be changed in place."
+    - name: crew-service-contract
+      description: "The crew Service is headless, keeps port 80 and the StatefulSet still has two Pods"
+      type: file
+      source: validation/validate-crew-service-contract.sh
+      hint: "Recreate only the Service. Do not delete the StatefulSet."
+    - name: rewrite-resolves
+      description: "deck.fleet.internal answers with the ClusterIP of the bridge Service"
+      type: file
+      source: validation/validate-rewrite-resolves.sh
+      hint: "Add a rewrite name exact rule to the .:53 block that maps deck.fleet.internal to bridge.starfleet.svc.cluster.local."
+    - name: corefile-keeps-default-block
+      description: "The Corefile keeps the kubernetes and forward directives"
+      type: file
+      source: validation/validate-corefile-keeps-default-block.sh
+      hint: "Add the rule to the existing block. Do not replace the Corefile."
+    - name: auditor-own-resolver
+      description: "The auditor Pods use only the partner-dns server and resolve relic.partner.example"
+      type: file
+      source: validation/validate-auditor-own-resolver.sh
+      hint: "Use dnsPolicy None with dnsConfig.nameservers set to the ClusterIP of partner-dns."
+    - name: coredns-scaled
+      description: "CoreDNS runs three ready replicas"
+      type: file
+      source: validation/validate-coredns-scaled.sh
+      hint: "Scale the coredns Deployment in kube-system and wait for the rollout."
+
+teardown:
+  keepCluster: false

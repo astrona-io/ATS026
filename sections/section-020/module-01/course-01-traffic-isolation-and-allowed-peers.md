@@ -5,67 +5,132 @@ exam_objectives:
 ---
 # Traffic Isolation And Allowed Peers
 
-A rule should allow only Pods labelled `app: shuttle` inside a selected namespace. Placing both selectors in one peer requires both matches. Splitting them into separate peers changes the condition into alternatives and can widen access.
+A NetworkPolicy is a list of allowed connections for a chosen group of Pods. Everything not on the list is dropped for those Pods. This part shows how the policy chooses its Pods, how it names the allowed peers and what happens to Pods that no policy selects.
 
 ## Learning objectives
 
-- Explain directional selection and additive allowances.
-- Interpret peer selectors and ports.
-- Identify required discovery and backend dependencies.
+- Explain which Pods a policy isolates and for which direction.
+- Write an ingress rule that allows one peer on one port.
+- Predict the result when selectors are combined in one entry and when they are listed separately.
+- Read a policy with `kubectl describe`.
 
 ## Before you start
 
-This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+A **NetworkPolicy** is a namespaced object of API group `networking.k8s.io/v1`. It is enforced by the network plugin, not by the API server, so the plugin must support it. The playground uses Calico, which does.
 
-## Responsible components and behavior
+<!-- astrona:playground:renew -->
 
-The `probe` application should accept traffic from `shuttle` and reject unrelated callers. A NetworkPolicy selects destination or source Pods and describes allowed network traffic. The cluster's network implementation must support and enforce it. The application programming interface (API) server can accept a policy even when the installed network implementation does not enforce its rules.
+Start by proving that nothing is restricted. Both client Pods can request the `bridge` application on port 80:
 
-Ingress policy governs incoming traffic to selected Pods. Egress policy governs outgoing traffic from selected Pods. In a direction where no policy isolates a Pod, traffic is allowed by default under the NetworkPolicy model. Once policies isolate that direction, the union of their allowed rules determines permitted traffic.
+```sh
+kubectl -n starfleet exec deploy/shuttle -- curl -s --max-time 3 -o /dev/null -w '%{http_code}\n' http://bridge/
+kubectl -n outpost exec deploy/drifter -- curl -s --max-time 3 -o /dev/null -w '%{http_code}\n' http://bridge.starfleet/
+```
 
-When both endpoints are isolated, the source's egress and destination's ingress must permit the connection. An ingress allowance at the destination cannot override an egress restriction at the source. Return traffic for an allowed connection is handled as part of that connection rather than requiring an independent reversed rule.
+Both requests return 200. No policy selects the `bridge` Pod, so it is not isolated and accepts every connection.
 
-Selectors and rule structure matter. A Pod selector applies within the relevant namespace scope; a namespace selector can identify other namespaces by labels. Combining selectors in one peer can require both conditions, while separate peers represent alternatives. An empty selected-Pod set and an empty allowed-peer set have different meanings.
+## What a policy selects
 
-Standard NetworkPolicy focuses on network connections through addresses, ports and protocols. It does not express arbitrary HTTP path authorization or user identity rules. It also does not automatically encrypt traffic. Features beyond the standard API depend on the implementation.
+The field `spec.podSelector` chooses the Pods the policy protects, by label, in the namespace of the policy. An empty selector `{}` chooses every Pod in the namespace. The field `spec.policyTypes` lists the directions the policy covers: `Ingress`, `Egress` or both. A Pod is **isolated for ingress** when at least one policy selects it and lists `Ingress`. From that moment the Pod accepts only the connections that the ingress rules of all selecting policies allow. The same applies to egress with the `Egress` type.
 
-For a blocked request, identify which Pods each policy selects, which directions are isolated and what peers and ports are allowed. This is more reliable than assuming a policy named “allow” permits every connection involving the application.
+Two rules follow from this. Policies only allow traffic. There is no deny rule, so isolation comes from being selected and the allowed list comes from the union of all rules. Adding a second policy for a Pod that is already isolated can only open more traffic, never close it.
 
-## Calculating Allowed Traffic
+## One policy that allows one peer
 
-Suppose a policy selects `probe` Pods for ingress isolation and allows callers with `app: shuttle` in `starfleet` on the intended application port. Another policy selects those same destination Pods and allows a monitoring caller. The permitted ingress is the union of these allowances; the second policy does not replace the first.
+Save this as `bridge-allow-shuttle.yaml`. It selects the `bridge` Pods and allows ingress from Pods labelled `app: shuttle` in the same namespace, on TCP port 80:
 
-Now consider a `shuttle` source whose egress is isolated. Even if the destination allows it, the source must permit the outbound connection. A connection is not allowed merely because one direction contains a permissive rule. Determine isolation and applicable allowances independently at both endpoints.
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bridge-allow-shuttle
+  namespace: starfleet
+spec:
+  podSelector:
+    matchLabels:
+      app: bridge
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: shuttle
+      ports:
+        - protocol: TCP
+          port: 80
+```
 
-An empty Pod selector selects every Pod in the policy's namespace. An isolated direction with no allowed traffic can express default deny for those selected Pods. An empty or omitted rule structure can mean something else depending on its position, so the location of a selector or list matters as much as its words. Evaluate the API structure rather than the policy's filename.
+Apply it:
 
-## Namespace And Pod Selection Together
+```sh
+kubectl apply -f bridge-allow-shuttle.yaml
+```
 
-A peer that combines a namespace selector and Pod selector requires a matching Pod in a matching namespace. Separate peer entries can instead express alternatives. Confusing those structures can widen access beyond the intended caller group. Namespace labels also need controlled ownership if security depends on their values.
+Then check the two clients again with the commands above. The request from `shuttle` still returns 200, and the request from `drifter` waits until curl gives up with a timeout. The packet is dropped without an answer, and that silence is how a policy drop looks to the client.
 
-Egress isolation often needs explicit allowance for dependencies such as Domain Name System (DNS) and data services. A blocked DNS lookup can prevent an application from reaching an otherwise allowed backend by name. The application symptom can therefore occur before the intended backend connection is attempted.
+## Three kinds of peer
 
-Standard policies govern supported connection properties, not every application operation. They cannot independently decide whether an authenticated user may delete a report at a particular HTTP path. A complete design connects network isolation with identity, authorization and encryption requirements while confirming that the network implementation actually enforces the rules.
+An ingress rule has a `from` list. Each entry in the list is one peer and uses exactly one of three forms or a combination of the first two:
 
-## Work through the decision
+- `podSelector` matches Pods by label in the namespace of the policy.
+- `namespaceSelector` matches all Pods in the namespaces whose labels match. Every namespace has the label `kubernetes.io/metadata.name` with its own name, which makes selection by name possible.
+- `ipBlock` matches a range of addresses with `cidr` and optional `except` ranges. It is meant for addresses outside the cluster, because Pod addresses change.
 
-A peer combines namespaceSelector and podSelector as one condition when both appear in the same peer entry. The namespace must match and the Pod inside it must match. Separate peer entries form alternatives. Indentation changes this structure even when the same field names appear, which makes full object inspection more useful than reading a policy's name.
+The `ports` list restricts the destination ports. Each entry has a `protocol` (TCP by default) and a `port`, which is a number or a named container port. A rule with no `ports` allows all ports.
 
-An empty policy-level podSelector selects every Pod in that policy's namespace. An isolated direction with no allowed rules permits no connections in that direction through that policy. An empty peer selector can instead widen the matching population. Read the field's position and applicable scope before calling an empty value restrictive. Namespace labels used for trust boundaries also require controlled ownership.
+## The difference between one entry and two
+
+Look at the two lists below. They differ by one dash:
+
+```yaml
+- from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: outpost
+      podSelector:
+        matchLabels:
+          app: drifter
+```
+
+```yaml
+- from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: outpost
+    - podSelector:
+        matchLabels:
+          app: drifter
+```
+
+The first list has one entry with two selectors, and both must match: Pods labelled `app: drifter` that are in the namespace `outpost`. The second has two entries, and either may match: every Pod in `outpost`, or any Pod labelled `app: drifter` in the policy namespace. The second form usually allows far more than intended.
 
 ```mermaid
 flowchart TB
-    N["Namespace label match"] --> P["One combined peer"]
-    L["Pod label match"] --> P
-    P --> A["Allowed source population"]
-    S["Separate peer entry"] --> A
+    P["incoming packet"] --> S{"destination Pod selected by a policy?"}
+    S -->|"no"| A["allowed"]
+    S -->|"yes"| R{"some rule matches peer and port?"}
+    R -->|"yes"| A
+    R -->|"no"| D["dropped"]
 ```
 
-Conditions within one peer combine, while separate peer entries contribute alternative allowed populations.
+A Pod that no policy selects accepts everything; a selected Pod accepts only what a rule allows.
 
-You can now explain the actual matching structure rather than relying on a policy title. Complete connection verification still needs the selected ports, isolated directions and real enforcement behavior.
+## Reading a policy back
+
+Ask the API server how it understood the policy:
+
+```sh
+kubectl -n starfleet describe networkpolicy bridge-allow-shuttle
+```
+
+The output lists the Pods the policy applies to, the allowed ingress sources and the policy types. Compare it with what you meant to write. A missing `from` entry or a wrong label shows up here before it shows up as a timeout.
+
+## Reading the result
+
+You have seen that isolation starts with the first policy that selects a Pod, that rules only add allowed traffic and that peers are chosen by Pod labels, namespace labels or address ranges. The result of a combined selector depends on the list structure, so read the dashes. Egress follows the same model and has one extra problem, the name lookup, which is the subject of the next steps in your practice.
 
 ## Common pitfalls
 
 > [!WARNING]
-> NetworkPolicy rules are additive allowances within isolated directions. Source egress and destination ingress can both matter, and enforcement requires a supporting network implementation.
+> A policy that selects Pods does nothing if the network plugin does not enforce policies, and no error tells you so. A `podSelector` in a `from` entry matches only Pods in the namespace of the policy unless a `namespaceSelector` is in the same entry. Do not use `ipBlock` for Pod addresses, because Pods get new addresses.

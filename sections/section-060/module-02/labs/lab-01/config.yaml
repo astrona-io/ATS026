@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Forward A Stub Domain And Tune Pod DNS (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-060-02-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - busybox:1.37.0
+      - coredns/coredns:1.12.0
+      - mccutchen/go-httpbin:2.25.0
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and the partner DNS server
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: stub-domain-resolves
+      description: "The partner.example zone resolves through the partner-dns server"
+      type: file
+      source: validation/validate-stub-domain-resolves.sh
+      hint: "Add a server block for partner.example:53 to the Corefile with a forward line that points at the ClusterIP of the partner-dns Service, then restart CoreDNS."
+    - name: cluster-names-still-resolve
+      description: "Cluster names still resolve to the Service ClusterIP"
+      type: file
+      source: validation/validate-cluster-names-still-resolve.sh
+      hint: "Keep the existing .:53 server block unchanged. Add the new block next to it."
+    - name: corefile-keeps-default-block
+      description: "The Corefile keeps the kubernetes and forward directives of the default block"
+      type: file
+      source: validation/validate-corefile-keeps-default-block.sh
+      hint: "Do not replace the whole Corefile with only the new block."
+    - name: coredns-running
+      description: "All CoreDNS Pods are ready"
+      type: file
+      source: validation/validate-coredns-running.sh
+      hint: "Read the CoreDNS logs for a parse error and wait for the rollout to finish."
+    - name: shuttle-ndots
+      description: "The shuttle Pod has ndots 2 and still resolves short Service names"
+      type: file
+      source: validation/validate-shuttle-ndots.sh
+      hint: "Set spec.template.spec.dnsConfig.options in the shuttle Deployment. Keep dnsPolicy ClusterFirst."
+
+teardown:
+  keepCluster: false

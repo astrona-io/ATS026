@@ -28,3 +28,19 @@ ID, not display position, so a later renderer can shuffle choices safely.
 
 The banks contain answer keys and are public learning material, so this is not
 a secure examination bank. Do not treat scores as an official CKA result.
+
+## Hands-On Coverage
+
+This course has 6 ungraded module playgrounds and 9 draft independent labs. Tasks and solutions are registered around each lab immediately after its teaching reading. Static configuration, shell/Python/YAML, parser, lifecycle and offline grader checks pass. Live execution remains pending because the session cannot access Podman; installed CLI configuration validation is separately blocked by its maintenance lock.
+
+| Module | Labs in teaching order |
+| --- | --- |
+| 010/01 | Trace DNS To A Service Address |
+| 020/01 | Allow One Peer And Deny Another |
+| 020/01 | Allow DNS And One Application Dependency |
+| 030/01 | Repair A Service Selector |
+| 030/01 | Reach A Service Through Its NodePort |
+| 040/01 | Attach An HTTPRoute To A Gateway |
+| 050/01 | Route A Matching Host Through Ingress |
+| 050/01 | Verify TLS Termination And Server Identity |
+| 060/01 | Restore A Broken CoreDNS Configuration |

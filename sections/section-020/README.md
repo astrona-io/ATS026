@@ -1,19 +1,42 @@
+# Section 020: Define And Enforce Network Policies
+
+Makes the reader able to restrict which Pods may send and receive traffic with NetworkPolicy: isolate a namespace with default-deny policies, admit named peers with namespace and Pod selectors, keep DNS working under an egress policy and find the cause when a policy blocks too much or too little. Every policy depends on a network plugin that enforces it, so the playgrounds and labs use a kind cluster with Calico.
+
+**Curriculum item covered:** Define and enforce Network Policies
+
 ---
-draft: true
-exam_objectives:
-- Define and enforce Network Policies
+
+## What You Will Master
+
+- Explain when a Pod becomes isolated and what isolation means for ingress and egress
+- Write ingress rules with Pod selectors, namespace selectors, IP blocks and ports
+- Combine selectors in one peer entry and in separate entries and predict the result
+- Write egress rules that keep DNS working
+- Create default-deny policies for ingress, egress and both
+- Predict the union of the rules of several policies that select one Pod
+- Use `ipBlock` with `except` and port ranges with `endPort`
+- Find the policy that decides a connection by checking endpoints, selectors, labels and the Pod port
+- Verify a fix from the allowed side and the denied side
+- Explain why a policy has no effect when the network plugin does not enforce it
+
 ---
-# Define and enforce Network Policies
 
-A rule should allow only Pods labelled `app: shuttle` inside a selected namespace. Placing both selectors in one peer requires both matches. Splitting them into separate peers changes the condition into alternatives and can widen access.
+## The Learning Path
 
-The explanations identify the responsible components, compare intended and observed state, and work through the decisions needed to preserve the requirement. Read the worked examples as reasoning about a proposed system; no environment is started by this section.
+### 1. Traffic Isolation And Enforcing Implementations
+- **Module reader:** `module-01/course.md`
+- **Playground:** `module-01/playground` — kind cluster with Calico, namespaces `starfleet` and `outpost` with the example workloads.
+- **Labs:** `module-01/labs/lab-01` (allow one peer and deny another) and `module-01/labs/lab-02` (allow DNS and one application dependency).
 
-Each module begins with its goals and ends with a summary. Reusable YAML knowledge checks follow the section summary and are registered separately for future presentation.
+### 2. Network Policy Patterns And Troubleshooting
+- **Module reader:** `module-02/course.md`
+- **Playground:** `module-02/playground` — the same workloads, Calico, and one policy that is wrong on purpose (`probe-ingress`).
+- **Labs:** `module-02/labs/lab-01` (isolate a namespace) and `module-02/labs/lab-02` (repair a network policy).
 
-## Learning Outcomes
+### Capstone
+- **Lab:** `capstone/labs/lab-01` — default deny for both directions, DNS egress and a narrow ingress rule across three namespaces.
 
-- Explain directional selection and additive allowances.
-- Interpret peer selectors and ports.
-- Identify required discovery and backend dependencies.
-- Distinguish declaration from demonstrated enforcement.
+### Knowledge check
+- `quiz.yaml` — 12 single-choice questions.
+
+UNTESTED: playgrounds and labs are checked statically only (configuration validation, shell and YAML syntax). They have not been run.

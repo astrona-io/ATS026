@@ -1,0 +1,322 @@
+# Knowledge check for section 020. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats026-020
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-020
+  title: Define and enforce Network Policies
+questions:
+- id: ats026-020-q01
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Write a default-deny ingress policy and predict which Pods it
+    isolates
+  source_readings:
+  - sections/section-020/module-02/course-01-default-deny-and-namespace-isolation.md
+  prompt: 'A namespace `starfleet` has no NetworkPolicy. You apply a policy with `podSelector:
+    {}`, `policyTypes: [Ingress]` and no `ingress` rules. What is the result?'
+  options:
+  - id: a
+    text: Every Pod in every namespace accepts no incoming connection.
+    explanation: A policy applies only to Pods in its own namespace.
+  - id: b
+    text: Every Pod in `starfleet` accepts no incoming and no outgoing connection.
+    explanation: Only `Ingress` is listed, so egress is not isolated.
+  - id: c
+    text: Nothing changes, because a policy without rules is ignored.
+    explanation: An isolating policy takes effect even without rules; the empty rule
+      list means that nothing is allowed.
+  - id: d
+    text: Every Pod in `starfleet` accepts no incoming connection, until another policy
+      allows some.
+    explanation: Correct. The empty `podSelector` selects every Pod in the policy
+      namespace, and `Ingress` in `policyTypes` isolates them for ingress. With no
+      rules, nothing is allowed in.
+  correct_option: d
+  explanation: Correct. The empty `podSelector` selects every Pod in the policy namespace,
+    and `Ingress` in `policyTypes` isolates them for ingress. With no rules, nothing
+    is allowed in.
+- id: ats026-020-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain how selectors in one peer entry and in separate entries
+    combine
+  source_readings:
+  - sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
+  prompt: 'A rule must allow only the Pods labelled `app: shuttle` in the namespace
+    labelled `team: starfleet`. Which `from` is correct?'
+  options:
+  - id: a
+    text: 'Two entries: one `namespaceSelector` for `team: starfleet` and one `podSelector`
+      for `app: shuttle`.'
+    explanation: 'Two entries are alternatives. This admits every Pod in the namespace
+      and every `app: shuttle` Pod in the policy namespace.'
+  - id: b
+    text: One entry that holds both the `namespaceSelector` and the `podSelector`.
+    explanation: Correct. Selectors in one entry must both match, so only `shuttle`
+      Pods in that namespace are allowed.
+  - id: c
+    text: 'One `podSelector` for `app: shuttle` only.'
+    explanation: A `podSelector` alone selects Pods only in the namespace of the policy.
+  - id: d
+    text: One `ipBlock` with the Pod CIDR.
+    explanation: "`ipBlock` is meant for addresses outside the cluster, and Pod addresses
+      change."
+  correct_option: b
+  explanation: Correct. Selectors in one entry must both match, so only `shuttle`
+    Pods in that namespace are allowed.
+- id: ats026-020-q03
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Describe when a Pod becomes isolated
+  source_readings:
+  - sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
+  prompt: A Pod is selected by no NetworkPolicy. Which statement is correct?
+  options:
+  - id: a
+    text: It accepts all incoming and all outgoing traffic.
+    explanation: Correct. A Pod that no policy selects is not isolated and allows
+      all traffic in both directions.
+  - id: b
+    text: It accepts only traffic from its own namespace.
+    explanation: Namespaces do not limit traffic without policies.
+  - id: c
+    text: It accepts incoming traffic but cannot send traffic.
+    explanation: Egress is not limited without a policy that selects the Pod for egress.
+  - id: d
+    text: It accepts no incoming traffic until a policy allows it.
+    explanation: Isolation starts only when a policy selects the Pod for that direction.
+  correct_option: a
+  explanation: Correct. A Pod that no policy selects is not isolated and allows all
+    traffic in both directions.
+- id: ats026-020-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Write an egress rule that keeps name resolution working
+  source_readings:
+  - sections/section-020/module-01/course-02-networkpolicy-and-allowed-connections.md
+  prompt: A default-deny egress policy in `outpost` makes every request by name fail.
+    Which rule restores name resolution?
+  options:
+  - id: a
+    text: Deleting the Service `kube-dns`.
+    explanation: Deleting a Service does not allow traffic and breaks resolution.
+  - id: b
+    text: An `ingress` rule that allows the CoreDNS Pods.
+    explanation: Name resolution requests leave the Pod, so they are egress traffic.
+  - id: c
+    text: An `egress` rule to the CoreDNS Pods in `kube-system` on port 53, UDP and
+      TCP.
+    explanation: Correct. Names are resolved by the CoreDNS Pods, reached on port
+      53 with UDP and also TCP for large answers.
+  - id: d
+    text: An `egress` rule to the Service IP of `kube-dns` on port 80.
+    explanation: DNS listens on port 53, not 80.
+  correct_option: c
+  explanation: Correct. Names are resolved by the CoreDNS Pods, reached on port 53
+    with UDP and also TCP for large answers.
+- id: ats026-020-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use the Pod port, not the Service port, in a policy rule
+  source_readings:
+  - sections/section-020/module-02/course-02-verifying-and-troubleshooting-policies.md
+  prompt: The Service `probe` listens on port 80 and forwards to the container port
+    8080. Which port must the ingress rule of the policy list?
+  options:
+  - id: a
+    text: 8080, the container port.
+    explanation: Correct. The policy matches the destination port of the packet after
+      the Service address is replaced by the Pod address.
+  - id: b
+    text: Both, because a policy sees both.
+    explanation: The policy sees only the Pod address and port.
+  - id: c
+    text: No port, because policies ignore ports.
+    explanation: A `ports` list restricts traffic to the listed ports.
+  - id: d
+    text: 80, the Service port.
+    explanation: The Service address is replaced before the policy is evaluated.
+  correct_option: a
+  explanation: Correct. The policy matches the destination port of the packet after
+    the Service address is replaced by the Pod address.
+- id: ats026-020-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Find the reason a policy blocks a client that should work
+  source_readings:
+  - sections/section-020/module-02/course-02-verifying-and-troubleshooting-policies.md
+  prompt: 'A client times out and the Service has endpoints. The policy allows `app:
+    shutle`, and the client is labelled `app: shuttle`. What is the cause?'
+  options:
+  - id: a
+    text: The Service has no ClusterIP.
+    explanation: The Service has endpoints and the request reached the policy stage.
+  - id: b
+    text: The network plugin deletes the policy.
+    explanation: Plugins do not delete policies.
+  - id: c
+    text: The API server rejects the policy.
+    explanation: The API accepts any label value and gives no error.
+  - id: d
+    text: The selector matches no Pod, so the policy admits nobody.
+    explanation: Correct. A selector with a label that no Pod has selects nothing,
+      and the policy allows no source from it.
+  correct_option: d
+  explanation: Correct. A selector with a label that no Pod has selects nothing, and
+    the policy allows no source from it.
+- id: ats026-020-q07
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Explain why a policy needs a plugin that enforces it
+  source_readings:
+  - sections/section-020/module-01/course-02-networkpolicy-and-allowed-connections.md
+  prompt: A policy that should block a request has no effect, and the Pod labels match.
+    Which check comes next?
+  options:
+  - id: a
+    text: Increase the replicas of the Deployment.
+    explanation: Replicas do not change policy enforcement.
+  - id: b
+    text: Check that the network plugin of the cluster enforces NetworkPolicy.
+    explanation: Correct. The API stores a NetworkPolicy in any cluster, but only
+      a plugin that enforces policies drops traffic.
+  - id: c
+    text: Rename the policy.
+    explanation: The name has no effect on enforcement.
+  - id: d
+    text: Replace the Service with a NodePort.
+    explanation: The Service type does not affect a policy.
+  correct_option: b
+  explanation: Correct. The API stores a NetworkPolicy in any cluster, but only a
+    plugin that enforces policies drops traffic.
+- id: ats026-020-q08
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Predict the union of several policies on one Pod
+  source_readings:
+  - sections/section-020/module-02/course-01-default-deny-and-namespace-isolation.md
+  prompt: 'Two ingress policies select the same Pod. One allows port 80 from `app:
+    a`, the other allows port 9898 from `app: b`. What traffic reaches the Pod?'
+  options:
+  - id: a
+    text: Only traffic that both policies allow, which is none.
+    explanation: Policies never subtract from each other; allowed traffic is added.
+  - id: b
+    text: 'The union: port 80 from `app: a` and port 9898 from `app: b`.'
+    explanation: Correct. The allowed traffic of all policies that select a Pod is
+      added together.
+  - id: c
+    text: Only the policy with the later creation time applies.
+    explanation: Creation time does not matter.
+  - id: d
+    text: All traffic, because two policies cancel each other.
+    explanation: Policies are additive and do not cancel.
+  correct_option: b
+  explanation: Correct. The allowed traffic of all policies that select a Pod is added
+    together.
+- id: ats026-020-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use ipBlock with except and port ranges correctly
+  source_readings:
+  - sections/section-020/module-02/course-01-default-deny-and-namespace-isolation.md
+  prompt: Which statement about `ipBlock` and `endPort` is correct?
+  options:
+  - id: a
+    text: "`ipBlock` is the best way to select Pods, because Pod IPs are stable."
+    explanation: Pod addresses change, so use label selectors for Pods.
+  - id: b
+    text: "`endPort` works with named ports."
+    explanation: "`endPort` works only with numeric ports."
+  - id: c
+    text: "`except` ranges can lie outside the `cidr`."
+    explanation: An `except` range outside the `cidr` is not valid.
+  - id: d
+    text: "`except` ranges must lie inside the `cidr`, and `endPort` must be equal
+      to or greater than `port`."
+    explanation: Correct. Both are validation rules of the NetworkPolicy API.
+  correct_option: d
+  explanation: Correct. Both are validation rules of the NetworkPolicy API.
+- id: ats026-020-q10
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Verify a fix from both sides
+  source_readings:
+  - sections/section-020/module-02/course-02-verifying-and-troubleshooting-policies.md
+  prompt: You fixed a policy so that the client works. Which test finishes the fix?
+  options:
+  - id: a
+    text: Test the client that must work and a client that must stay blocked.
+    explanation: Correct. A fix is complete only when the allowed client works and
+      the denied client is still blocked.
+  - id: b
+    text: Delete the policy and test again.
+    explanation: Without the policy every client works, which is the opposite of the
+      goal.
+  - id: c
+    text: Restart the destination Pod.
+    explanation: A restart does not test the policy.
+  - id: d
+    text: Repeat the request from the client that now works.
+    explanation: That does not prove that the isolation still holds.
+  correct_option: a
+  explanation: Correct. A fix is complete only when the allowed client works and the
+    denied client is still blocked.
+- id: ats026-020-q11
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Scope a policy to its namespace
+  source_readings:
+  - sections/section-020/module-02/course-02-verifying-and-troubleshooting-policies.md
+  prompt: You create a policy in `outpost` to protect the Pod `scout` that runs in
+    `starfleet`. What happens?
+  options:
+  - id: a
+    text: "`scout` is protected, because the label matches."
+    explanation: A policy never selects Pods in another namespace.
+  - id: b
+    text: The policy protects nothing in `starfleet`, because a policy selects Pods
+      only in its own namespace.
+    explanation: Correct. `spec.podSelector` selects Pods in the namespace of the
+      policy only.
+  - id: c
+    text: The API rejects the policy.
+    explanation: The API accepts it without a check on Pods.
+  - id: d
+    text: "`scout` is protected for egress only."
+    explanation: The policy has no effect on `scout` in either direction.
+  correct_option: b
+  explanation: Correct. `spec.podSelector` selects Pods in the namespace of the policy
+    only.
+- id: ats026-020-q12
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Restore a working path after a default-deny egress policy
+  source_readings:
+  - sections/section-020/module-02/course-01-default-deny-and-namespace-isolation.md
+  prompt: A live namespace gets a default-deny egress policy. Pods fail to reach a
+    Service by name but could reach it by IP before. Why?
+  options:
+  - id: a
+    text: The Pods lost their labels.
+    explanation: Labels do not change.
+  - id: b
+    text: The policy also drops DNS requests to CoreDNS.
+    explanation: Correct. A default-deny egress policy blocks DNS, because name resolution
+      is egress traffic. A DNS rule must be added.
+  - id: c
+    text: The Service lost its ClusterIP.
+    explanation: The ClusterIP is unchanged.
+  - id: d
+    text: Calico removes Services on policy changes.
+    explanation: Calico does not remove Services.
+  correct_option: b
+  explanation: Correct. A default-deny egress policy blocks DNS, because name resolution
+    is egress traffic. A DNS rule must be added.

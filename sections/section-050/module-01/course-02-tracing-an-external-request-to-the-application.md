@@ -15,7 +15,7 @@ The frontend returns a routing error before the application logs a request. The 
 
 ## Before you start
 
-This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+You need the playground with Traefik, the `probe` Service in `starfleet` and the `shuttle` client Pod. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. The hands-on steps near the end of this chapter break a route in three ways and read the evidence each time.
 
 ## Responsible components and behavior
 
@@ -71,6 +71,80 @@ flowchart TB
 Frontend trust, route matching and backend processing can fail independently along one external request.
 
 You can now attribute an external symptom to a specific request boundary. Repeat the intended hostname and operation with verification enabled after correcting the responsible setting.
+
+## Break a route and read the evidence
+
+The three experiments below each change one thing and read one source of evidence. They use an Ingress named `trace-demo` for host `trace.local`. The Ingress and the commands work on their own and need nothing from earlier steps.
+
+<!-- astrona:playground:renew -->
+
+Save this as `ingress-trace-demo.yaml`:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trace-demo
+  namespace: starfleet
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: trace.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: probe
+            port:
+              number: 80
+```
+
+Apply it:
+
+```sh
+kubectl apply -f ingress-trace-demo.yaml
+```
+
+Then send one request. It returns the `probe` body, which is the reference result for the experiments:
+
+```sh
+kubectl -n starfleet exec shuttle -- wget -qO- -T 3 --header 'Host: trace.local' http://traefik.ingress-system.svc/
+```
+
+The first experiment removes the endpoints. Scale the Deployment to zero Pods, wait a few seconds for Traefik to reload and send the same request:
+
+```sh
+kubectl -n starfleet scale deployment probe --replicas=0
+kubectl -n starfleet get endpointslices -l kubernetes.io/service-name=probe
+kubectl -n starfleet exec shuttle -- wget -qO- -T 3 --header 'Host: trace.local' http://traefik.ingress-system.svc/
+```
+
+The Ingress and the Service are unchanged, but the EndpointSlice has no ready address. This Traefik instance runs without the `allowEmptyServices` option, so it creates no route to a Service without endpoints and answers with its own 404 body. The error body comes from Traefik, not from the application, and the `probe` Pods log nothing. Restore the Pods before the next experiment:
+
+```sh
+kubectl -n starfleet scale deployment probe --replicas=2
+kubectl -n starfleet rollout status deployment/probe
+```
+
+The second experiment reads the controller log. The Traefik log is the second source of evidence, next to the response body:
+
+```sh
+kubectl -n ingress-system logs deployment/traefik --tail=20
+```
+
+The log shows the controller side of the request path: configuration reloads and errors that Traefik found while it read the Ingress objects. When a client sees a 404 and the log shows an error about the Ingress or the Service, the fault is in the declared route, not in the application.
+
+The third experiment requests the application directly, without the controller. This skips the Ingress rule and shows whether the backend itself answers:
+
+```sh
+kubectl -n starfleet exec shuttle -- wget -qO- -T 3 http://probe.starfleet.svc/
+```
+
+This request needs no Host header, because a Service has no host rules. If it returns `version=v1` while the request through the controller fails, the application and the Service are healthy, and the fault lies in the Ingress, the class or the controller. If it fails too, repair the Service or the Pods first.
+
+You have now seen the three sources of evidence: the response body, the EndpointSlice and the controller log. The request path has more steps than one command can test, which is why the order of the checks matters more than any single command.
 
 ## Common pitfalls
 

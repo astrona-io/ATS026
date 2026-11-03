@@ -3,80 +3,93 @@ draft: true
 exam_objectives:
 - Understand and use CoreDNS
 ---
-# CoreDNS Configuration And Cluster Name Resolution
+# From A Pod To An Answer: The Cluster Query Path
 
-A Pod resolves public names but not a Service name, while another Pod cannot reach the resolver at all. These symptoms point to different DNS boundaries.
+A Pod resolves public names but not a Service name, while another Pod cannot reach the resolver at all. Both symptoms look like "DNS is broken", but they come from different places on the path of a query. This chapter follows one query from the application to the answer, so that each later failure has a known place to look.
 
-## Learning objectives
+## What the Pod knows about DNS
 
-- Explain Pod resolver settings and namespace search context.
-- Identify Corefile and plugin responsibilities.
-- Distinguish cluster lookup from upstream forwarding.
+DNS (Domain Name System) turns a name into an address. An application calls the resolver library of its container image, and the library reads the file `/etc/resolv.conf`. The kubelet, the node agent that starts the containers, writes that file when it creates the Pod. The Pod does not choose its DNS server; the Pod's `dnsPolicy` field does, and the default policy is `ClusterFirst`.
 
-## Before you start
+The first step is to read the file the kubelet wrote. The commands in this chapter run in the playground, and they use the `shuttle` Pod in the `starfleet` namespace.
 
-This chapter is standalone reading material; no running cluster or installed tools are required. A Pod is the Kubernetes unit for running one or more containers, and a namespace groups namespaced objects. Treat the worked configurations as teaching examples rather than recorded observations from a provisioned environment.
+<!-- astrona:playground:renew -->
 
-## Responsible components and behavior
+```sh
+kubectl -n starfleet exec shuttle -- cat /etc/resolv.conf
+kubectl -n kube-system get service kube-dns
+```
 
-CoreDNS is a DNS server commonly deployed to provide Kubernetes cluster name resolution. DNS means Domain Name System. Cluster naming helps applications discover Services and relevant endpoints, but the resolver, its configuration and the querying Pod's own DNS settings must form a usable path before a hostname becomes useful.
+The file has three kinds of lines. The `nameserver` line holds the ClusterIP of the `kube-dns` Service, and the second command shows that same address in the `CLUSTER-IP` column. The `search` line holds three domains: `starfleet.svc.cluster.local`, `svc.cluster.local` and `cluster.local`. The `options` line holds `ndots:5`.
 
-## The Query Path Has Several Parts
+The Service is called `kube-dns` for historical reasons, and CoreDNS runs behind it. Every DNS query from every Pod with the default policy goes to this one ClusterIP, and the Service load-balances the queries over the CoreDNS Pods.
 
-A Pod's DNS configuration can select a cluster resolver and search domains under its supported `dnsPolicy` and optional settings. Search domains let a short Service name be interpreted in an appropriate namespace context. An identical short name in another namespace can refer to a different destination.
+## How a short name becomes a full name
 
-A fully qualified Service name includes the Service name, namespace and cluster naming domain. The cluster domain is configurable, so assuming a remembered suffix applies to every installation can misidentify a valid resource. Compare the Pod's resolver configuration with the cluster's intended domain.
+The `ndots` option sets a threshold. When a name has fewer dots than `ndots`, the resolver tries the search domains first and the name as written last. The name `probe` has no dots, so the resolver asks for `probe.starfleet.svc.cluster.local` first. That name exists, so the first query succeeds.
 
-The DNS Service selects eligible resolver Pods through ordinary Service and endpoint relationships. If those endpoints are absent, name resolution can fail despite healthy application Pods. If restrictive network policy blocks queries to the resolver, the server can be running while a particular client cannot use it.
+A fully qualified domain name (FQDN) for a Service has four parts: the Service name, the namespace, the label `svc` and the cluster domain. The default cluster domain is `cluster.local`, and an administrator can change it at cluster creation. The requests below use several valid forms of the name:
 
-## Read The Corefile Responsibilities
+```sh
+kubectl -n starfleet exec shuttle -- wget -q -T 3 -O- http://probe/
+kubectl -n starfleet exec shuttle -- wget -q -T 3 -O- http://probe.starfleet/
+kubectl -n starfleet exec shuttle -- wget -q -T 3 -O- http://probe.starfleet.svc.cluster.local/
+kubectl -n outpost exec drifter -- wget -q -T 3 -O- http://probe/
+kubectl -n outpost exec drifter -- wget -q -T 3 -O- http://probe.starfleet/
+```
 
-CoreDNS uses a Corefile to describe server blocks and plugins. A Kubernetes plugin can answer supported cluster-resource names through API observations. A forwarding plugin can send suitable non-cluster queries to configured upstream resolvers. Other plugins can support caching, errors, logging or health behavior under their documented contracts.
+The first three commands reach the same Service from `shuttle`. The fourth command fails: the `drifter` Pod is in `outpost`, so its search list turns `probe` into `probe.outpost.svc.cluster.local`, and no Service with that name exists. The fifth command works, because `probe.starfleet` names the namespace. The search domains always start with the namespace of the Pod that asks. A short name is therefore safe only inside one namespace, and a request across namespaces needs `<service>.<namespace>`.
 
-Plugin configuration affects which zone is handled and how queries are processed. A syntax error can prevent startup or configuration use. A forwarding target that sends queries back into the same unresolved path can create a loop. Copying an upstream resolver setting without understanding the node's resolver arrangement can therefore introduce failure.
-
-CoreDNS needs appropriate access to the Kubernetes resources used for discovery. A server process can start while its API watches fail through permission or endpoint problems. Distinguish a configuration parser failure, a denied resource watch and an upstream lookup failure when interpreting records.
-
-## Services And Endpoints Have Different Naming Behavior
-
-A normal ClusterIP Service commonly resolves to its Service address. A headless Service can provide supported endpoint-oriented answers instead. Those representations fit different application needs and should not be treated as interchangeable ways to locate one stable virtual address.
-
-The names and answers depend on actual resources and endpoint conditions. A correct Service name does not prove its selected application backends are ready. Resolving a ClusterIP is evidence about discovery; reaching a useful application response requires the subsequent Service and Pod network path.
-
-External names need their own upstream route and policy allowance. Successful cluster-local lookup does not prove that external hostname resolution is available, and successful external lookup does not prove the Kubernetes plugin can observe cluster resources. Use a relevant query for each responsibility.
-
-## Diagnose By Comparison
-
-If only one namespace fails to resolve a short name, examine search domains and resource scope. If many Pods fail every query, examine resolver Service endpoints, network access and CoreDNS operation. If cluster names work but external names fail, examine forwarding and upstream conditions.
-
-A timeout means no usable answer arrived within the observer's limit, while a negative answer can mean the resolver reports the name does not exist under the queried context. These observations suggest different paths but still need server and client context. A policy that drops traffic can produce a timeout without proving that the resource name is absent.
-
-After correction, evaluate both the intended lookup and the following application connection. This distinguishes restored naming from useful service reachability. Preserve the cluster domain and plugin responsibilities in the explanation so a temporary working query is not mistaken for proof that every discovery dependency is healthy.
-
-## Work through the decision
-
-CoreDNS is a DNS server commonly used for Kubernetes cluster discovery. Its configuration can supply cluster records and forward other requests to upstream resolvers. The client also needs correct DNS policy and search behavior plus network access to that server.
-
-Separate record selection, resolver availability and upstream forwarding. A namespace-qualified Service name addresses client naming, not an unavailable resolver. An external lookup can fail through upstream forwarding while cluster discovery still works. Configuration changes can affect many workloads, so review the intended plugin behavior and verify representative internal and external queries before declaring a DNS repair complete.
+The commands use `wget` and not `nslookup` for short names, on purpose. The `wget` tool uses the resolver library of the image and so follows the search list, like an application does. The busybox `nslookup` tool sends the name exactly as typed and ignores the search list, so use it only with full names.
 
 ```mermaid
 flowchart TB
-    N0["Client DNS configuration"]
-    N1["Reachable CoreDNS"]
-    N2["Cluster record or upstream selection"]
-    N3["Resolution response"]
-    N4["Subsequent application connection"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
+    A["application in the Pod"] -->|"resolver library"| B["/etc/resolv.conf"]
+    B -->|"nameserver address"| C["kube-dns Service"]
+    C -->|"load balances"| D["CoreDNS Pod"]
+    D -->|"cluster.local names"| E["kubernetes plugin"]
+    D -->|"all other names"| F["forward plugin"]
 ```
 
-Name resolution has its own client, server and upstream contracts and still does not establish backend health.
+The diagram shows the path every query takes: the Pod sends it to the `kube-dns` ClusterIP, and a CoreDNS Pod decides between the cluster records and the upstream resolvers.
 
-Name resolution has its own client, server and upstream contracts and still does not establish backend health.
+## What CoreDNS does with the query
+
+CoreDNS is a DNS server written as a chain of plugins. It is configured in a file named the Corefile. In a cluster, the Corefile is stored in the ConfigMap `coredns` in the `kube-system` namespace, under the key `Corefile`. CoreDNS mounts this ConfigMap as a file in each of its Pods. Print the file the playground uses:
+
+```sh
+kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}'
+```
+
+A typical default Corefile has one server block, `.:53`, which handles every name on port 53. The directives inside it are plugins. The `kubernetes` plugin is the one that makes CoreDNS a Kubernetes component: it watches Services and EndpointSlices in the API server and answers names that end in `cluster.local`. The `forward . /etc/resolv.conf` plugin sends every name the `kubernetes` plugin does not own to the resolvers listed in the node's `/etc/resolv.conf`.
+
+Your Corefile can differ in small details from other clusters, because the installer writes it. The idea does not change: cluster names are answered from watched API objects, and everything else leaves the cluster through `forward`.
+
+## Names outside the cluster
+
+A name such as `example.com` does not end in `cluster.local`, so the `kubernetes` plugin does not answer it. The `forward` plugin sends the query to an upstream resolver and returns the answer to the Pod. The upstream resolvers come from `/etc/resolv.conf` on the node that runs the CoreDNS Pod, unless the Corefile lists addresses directly.
+
+Because `example.com` has one dot and `ndots` is 5, the resolver first tries the search domains. It asks for `example.com.starfleet.svc.cluster.local`, then `example.com.svc.cluster.local`, then `example.com.cluster.local`. The `kubernetes` plugin answers each of these with "name does not exist", and only the last attempt, `example.com`, reaches the upstream. Each failed attempt is one extra query to CoreDNS. This is normal behaviour, not an error.
+
+A fully qualified name that ends in a dot, such as `example.com.`, skips the search list. Use it when you test the upstream path, because it removes the search domains from the picture.
+
+## What a successful lookup proves
+
+A lookup of `probe.starfleet.svc.cluster.local` returns the ClusterIP of the Service. Compare it with the address that the Service holds:
+
+```sh
+kubectl -n starfleet get service probe
+kubectl -n starfleet exec shuttle -- nslookup probe.starfleet.svc.cluster.local
+kubectl -n starfleet exec shuttle -- wget -q -T 3 -O- http://probe/
+```
+
+The first two commands should show the same address. The third command is a separate test: it checks that a Pod behind the Service answers on the port. A name can resolve to a Service without ready Pods, and then the lookup succeeds while the request times out. The lookup tests the naming, and the request tests the path to the backend.
+
+The reverse also holds. A request by a fixed IP address works while DNS is broken, because the resolver is not involved. That is a useful test: when the address works and the name does not, the fault is in the DNS path and not in the application.
+
+This chapter showed that a Pod's resolver file, the `kube-dns` Service and the Corefile form one chain. The open question is what happens when one link breaks, and how a failure looks from the client. The next chapter answers that with a broken Corefile.
 
 ## Common pitfalls
 
 > [!WARNING]
-> Resolver process health, DNS Service endpoints, API watches and upstream forwarding are separate conditions. Name resolution does not prove Service readiness or application connectivity.
+> A short name depends on the namespace of the client. `probe` in `starfleet` and `probe` in `outpost` are different Services, so do not copy a short name into a workload in another namespace and expect the same backend. Do not assume the domain is `cluster.local` in every cluster: read the `search` line of a Pod first.

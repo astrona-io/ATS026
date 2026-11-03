@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Route, Split And Rewrite Traffic With HTTPRoute (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-040-02-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    addons:
+      gatewayAPI: envoy
+      gatewayPorts:
+        http: 18083
+        https: 18446
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and the Gateway edge
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: route-accepted
+      description: "The HTTPRoute scout is accepted by the Gateway edge and its backends resolve"
+      type: file
+      source: validation/validate-route-accepted.sh
+      hint: "Read the conditions under status.parents of the HTTPRoute. Accepted and ResolvedRefs must both be True."
+    - name: default-goes-to-v1
+      description: "A request without the canary header reaches scout-v1"
+      type: file
+      source: validation/validate-default-goes-to-v1.sh
+      hint: "The rule with only a path match is the default. Its backend is the Service scout-v1."
+    - name: canary-header-goes-to-v2
+      description: "A request with the header x-canary: true reaches scout-v2"
+      type: file
+      source: validation/validate-canary-header-goes-to-v2.sh
+      hint: "Add a rule with a headers match of type Exact. A rule with a header match beats a rule with only a path match."
+    - name: legacy-redirects
+      description: "A request for /legacy gets a 301 redirect"
+      type: file
+      source: validation/validate-legacy-redirects.sh
+      hint: "Use a RequestRedirect filter with statusCode 301 and a ReplaceFullPath path."
+    - name: echo-rewrite-and-header
+      description: "A request for /echo/probe reaches echo as /anything/probe with the header x-route: scout"
+      type: file
+      source: validation/validate-echo-rewrite-and-header.sh
+      hint: "Use a URLRewrite filter with ReplacePrefixMatch and a RequestHeaderModifier filter with set."
+    - name: workloads-unchanged
+      description: "The scout-v1, scout-v2 and echo Deployments keep their images"
+      type: file
+      source: validation/validate-workloads-unchanged.sh
+      hint: "Change only the HTTPRoute."
+
+teardown:
+  keepCluster: false

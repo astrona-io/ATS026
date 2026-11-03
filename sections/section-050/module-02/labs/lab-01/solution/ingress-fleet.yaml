@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fleet
+  namespace: starfleet
+spec:
+  defaultBackend:
+    service:
+      name: fallback
+      port:
+        number: 80
+  rules:
+    - host: fleet.local
+      http:
+        paths:
+          - path: /scout
+            pathType: Prefix
+            backend:
+              service:
+                name: scout
+                port:
+                  number: 80
+          - path: /probe
+            pathType: Prefix
+            backend:
+              service:
+                name: probe
+                port:
+                  number: 80
+          - path: /bridge
+            pathType: Exact
+            backend:
+              service:
+                name: bridge
+                port:
+                  number: 80

@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Choose A Controller, Class, Paths And Hosts (PLAYGROUND). Clean environment for free exploration: no task, no grading.
+# Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-playground-050-02
+  docs:
+    guide: docs/overview.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - docker.io/library/traefik:v3.6.1
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  manifests:
+    - name: starfleet
+      type: file
+      source: manifests/lab-start.yaml
+  waitFor:
+    - resource: deploy/traefik
+      namespace: ingress-system
+    - resource: deploy/scout
+      namespace: starfleet
+    - resource: deploy/probe
+      namespace: starfleet
+    - resource: deploy/bridge
+      namespace: starfleet
+    - resource: deploy/fallback
+      namespace: starfleet
+    - resource: deploy/shuttle
+      namespace: starfleet
+
+teardown:
+  keepCluster: false

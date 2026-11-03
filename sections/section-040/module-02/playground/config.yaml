@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Route, Split And Rewrite Traffic With HTTPRoute (PLAYGROUND). Clean environment for free exploration: no task, no grading.
+# Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-playground-040-02
+  docs:
+    guide: docs/overview.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    addons:
+      gatewayAPI: envoy
+      gatewayPorts:
+        http: 18082
+        https: 18445
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+
+bootstrap:
+  init:
+    - name: seed-playground
+      description: Create the workloads, the Gateway edge and the extra namespaces
+      type: file
+      source: bootstrap/setup.sh
+
+teardown:
+  keepCluster: false

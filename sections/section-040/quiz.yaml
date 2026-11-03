@@ -1,0 +1,302 @@
+# Knowledge check for section 040. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats026-040
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-040
+  title: "Use the Gateway API to manage Ingress traffic"
+questions:
+  - id: ats026-040-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Name the job of a GatewayClass, a Gateway and an HTTPRoute"
+    source_readings:
+      - sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
+    prompt: |-
+      A cluster has the Envoy Gateway controller installed. Which object tells the cluster which controller handles a Gateway?
+    options:
+      - id: a
+        text: "A `Gateway`, through its `listeners` field."
+        explanation: "A listener opens a port. It does not name the controller."
+      - id: b
+        text: "A `GatewayClass`, through its `controllerName` field. A `Gateway` points at the class with `gatewayClassName`."
+        explanation: "Correct. The class is cluster-scoped and names the controller that reads every Gateway of that class."
+      - id: c
+        text: "An `HTTPRoute`, through its `parentRefs` field."
+        explanation: "`parentRefs` names the Gateway the route attaches to, not a controller."
+      - id: d
+        text: "A `Service` of type `LoadBalancer` in the `kube-system` namespace."
+        explanation: "A Service does not choose the controller of a Gateway."
+    correct_option: b
+    explanation: "The class is cluster-scoped and names the controller that reads every Gateway of that class."
+
+  - id: ats026-040-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Explain why a route in another namespace is refused and fix it"
+    source_readings:
+      - sections/section-040/module-01/course-02-routes-and-status-conditions.md
+      - sections/section-040/module-02/course-03-cross-namespace-routes-and-reference-grants.md
+    prompt: |-
+      A route in `outpost` has `parentRefs` to the Gateway `edge` in `starfleet`. The listener has `allowedRoutes.namespaces.from: Same`. The route shows `Accepted=False`. What is the reason and the fix?
+    options:
+      - id: a
+        text: "The reason is `BackendNotFound`. Create the Service."
+        explanation: "That reason belongs to `ResolvedRefs` and a missing Service. It does not explain a refused attachment."
+      - id: b
+        text: "The reason is `RefNotPermitted`. Create a `ReferenceGrant` in `outpost`."
+        explanation: "That reason belongs to a backend reference, and a grant does not permit attachment to a Gateway."
+      - id: c
+        text: "The reason is `NotAllowedByListeners`. The Gateway owner must change `allowedRoutes` to allow the namespace, for example with a label selector."
+        explanation: "Correct. The listener decides which namespaces may attach, and the owner of the Gateway controls that field."
+      - id: d
+        text: "The reason is `Programmed=False`. Delete and create the Gateway again."
+        explanation: "`Programmed` describes the Gateway, not the attachment of one route."
+    correct_option: c
+    explanation: "The listener decides which namespaces may attach, and the owner of the Gateway controls that field."
+
+  - id: ats026-040-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Read the Accepted and ResolvedRefs conditions and say which one fails for which cause"
+    source_readings:
+      - sections/section-040/module-01/course-02-routes-and-status-conditions.md
+    prompt: |-
+      An `HTTPRoute` has `Accepted=True` and `ResolvedRefs=False` with the reason `BackendNotFound`. What does that mean?
+    options:
+      - id: a
+        text: "The route attached to the Gateway, but a Service named in `backendRefs` does not exist."
+        explanation: "Correct. `Accepted` covers the attachment and the rule syntax. `ResolvedRefs` covers the references to backends."
+      - id: b
+        text: "The route did not attach, because the listener refused the namespace."
+        explanation: "A refused attachment shows as `Accepted=False`."
+      - id: c
+        text: "The Gateway has no address yet."
+        explanation: "A missing address shows in the `Programmed` condition of the Gateway."
+      - id: d
+        text: "The controller does not support a filter in the route."
+        explanation: "An unsupported filter does not give the reason `BackendNotFound`."
+    correct_option: a
+    explanation: "`Accepted` covers the attachment and the rule syntax. `ResolvedRefs` covers the references to backends."
+
+  - id: ats026-040-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Predict which rule wins when several rules match"
+    source_readings:
+      - sections/section-040/module-02/course-01-matches-precedence-and-weights.md
+    prompt: |-
+      A route has one rule with `PathPrefix /` and one rule with `PathPrefix /echo`. A client sends `GET /echo/probe`. Which rule serves it, and why?
+    options:
+      - id: a
+        text: "The rule with `/`, because it comes first in the list."
+        explanation: "The list position only breaks the last tie. It is not the first test."
+      - id: b
+        text: "The rule with `/echo`, because a longer path prefix wins over a shorter one."
+        explanation: "Correct. Both prefixes match. The controller prefers the match with the longer path."
+      - id: c
+        text: "Neither rule. The controller returns a 404 response when two rules match."
+        explanation: "Several matching rules are normal, and precedence picks one."
+      - id: d
+        text: "Both rules, and the proxy sends the request to both backends."
+        explanation: "A request is served by exactly one rule."
+    correct_option: b
+    explanation: "Both prefixes match. The controller prefers the match with the longer path."
+
+  - id: ats026-040-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Split traffic between two Services with weight"
+    source_readings:
+      - sections/section-040/module-02/course-01-matches-precedence-and-weights.md
+    prompt: |-
+      A rule has `backendRefs` for `scout-v1` with `weight: 3` and for `scout-v2` with `weight: 1`. What share of requests goes to `scout-v2`?
+    options:
+      - id: a
+        text: "1 percent, because the weights are percentages."
+        explanation: "Weights are shares of the sum, not percentages."
+      - id: b
+        text: "33 percent, because there are three more requests for the first backend."
+        explanation: "33 percent would need the weights 2 and 1."
+      - id: c
+        text: "25 percent, because the share is `weight / sum of weights`, which is 1 of 4."
+        explanation: "Correct. The proxy sends each backend the share `weight / total`."
+      - id: d
+        text: "50 percent, because the default weight is the same for every backend."
+        explanation: "The default weight applies only when the field is not set."
+    correct_option: c
+    explanation: "The proxy sends each backend the share `weight / total`."
+
+  - id: ats026-040-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Explain what a weight of 0 does"
+    source_readings:
+      - sections/section-040/module-02/course-01-matches-precedence-and-weights.md
+    prompt: |-
+      A backend in a rule has `weight: 0`. What happens?
+    options:
+      - id: a
+        text: "The backend stays in the route and receives no requests."
+        explanation: "Correct. A weight of 0 is valid. It is useful to prepare a backend before the first request goes to it."
+      - id: b
+        text: "The controller rejects the route with `Accepted=False`."
+        explanation: "A weight of 0 is valid."
+      - id: c
+        text: "The backend receives all requests, because 0 means no limit."
+        explanation: "A weight of 0 means no share."
+      - id: d
+        text: "The backend is deleted from the cluster."
+        explanation: "A weight changes routing only. It never changes the Service."
+    correct_option: a
+    explanation: "A weight of 0 is valid. It is useful to prepare a backend before the first request goes to it."
+
+  - id: ats026-040-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Redirect a request with RequestRedirect"
+    source_readings:
+      - sections/section-040/module-02/course-02-filters-redirect-rewrite-and-headers.md
+    prompt: |-
+      A rule for `PathPrefix /legacy` has a `RequestRedirect` filter with `statusCode: 301` and `ReplaceFullPath: /`. A client sends `GET /legacy/old`. What does the client receive?
+    options:
+      - id: a
+        text: "A 200 response from the first backend in the route."
+        explanation: "A redirect rule does not forward the request to a backend."
+      - id: b
+        text: "A 404 response, because `/legacy/old` has no rule."
+        explanation: "The prefix `/legacy` matches `/legacy/old`."
+      - id: c
+        text: "A response from the backend with the path changed to `/`."
+        explanation: "That describes a rewrite. A redirect answers the client directly."
+      - id: d
+        text: "A 301 response with a `location` header for the path `/`, answered by the proxy. No Pod gets the request."
+        explanation: "Correct. `RequestRedirect` stops the request at the Gateway and the client must ask again."
+    correct_option: d
+    explanation: "`RequestRedirect` stops the request at the Gateway and the client must ask again."
+
+  - id: ats026-040-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Rewrite a path with URLRewrite"
+    source_readings:
+      - sections/section-040/module-02/course-02-filters-redirect-rewrite-and-headers.md
+    prompt: |-
+      A rule matches `PathPrefix /echo` and has a `URLRewrite` filter with `ReplacePrefixMatch: /anything`. What path does the backend see for a client request to `/echo/probe`?
+    options:
+      - id: a
+        text: "`/echo/probe`, because the client does not see the rewrite."
+        explanation: "The client does not see the rewrite, but the backend does."
+      - id: b
+        text: "`/anything/probe`, because the matched prefix `/echo` is replaced and the rest stays."
+        explanation: "Correct. `ReplacePrefixMatch` replaces only the part of the path that the prefix match covered."
+      - id: c
+        text: "`/anything`, because the filter replaces the whole path."
+        explanation: "That is the result of `ReplaceFullPath`."
+      - id: d
+        text: "`/anything/echo/probe`, because the new prefix is added in front."
+        explanation: "The filter replaces the matched prefix. It does not add to it."
+    correct_option: b
+    explanation: "`ReplacePrefixMatch` replaces only the part of the path that the prefix match covered."
+
+  - id: ats026-040-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Change headers with RequestHeaderModifier"
+    source_readings:
+      - sections/section-040/module-02/course-02-filters-redirect-rewrite-and-headers.md
+    prompt: |-
+      A rule has a `RequestHeaderModifier` filter that uses `set` for `x-route: filters`. A client sends the header `x-route: attacker`. What does the backend receive?
+    options:
+      - id: a
+        text: "Both values, as two separate headers."
+        explanation: "`add` appends a value. `set` replaces it."
+      - id: b
+        text: "The value `attacker`, because client headers always win."
+        explanation: "The proxy applies the filter after it receives the request."
+      - id: c
+        text: "The value `filters`, because `set` replaces any value the client sent."
+        explanation: "Correct. The proxy replaces the header before it sends the request to the backend."
+      - id: d
+        text: "No `x-route` header, because the proxy removes headers that the client sent."
+        explanation: "`remove` deletes a header. `set` gives it the configured value."
+    correct_option: c
+    explanation: "The proxy replaces the header before it sends the request to the backend."
+
+  - id: ats026-040-q10
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Allow a route to use a Service in another namespace with a ReferenceGrant"
+    source_readings:
+      - sections/section-040/module-02/course-03-cross-namespace-routes-and-reference-grants.md
+    prompt: |-
+      A route in `starfleet` names the Service `stock` in `catalog` in `backendRefs`. In which namespace must the `ReferenceGrant` be, and what does it name?
+    options:
+      - id: a
+        text: "In `catalog`. It names `HTTPRoute` objects from `starfleet` in `from` and the Service in `to`."
+        explanation: "Correct. The owner of the target namespace gives the permission, so the grant lives next to the Service."
+      - id: b
+        text: "In `starfleet`. It names the Service in `catalog` in `to`."
+        explanation: "The grant in the namespace of the route would let a route owner give itself permission."
+      - id: c
+        text: "In `kube-system`, because the controller runs there."
+        explanation: "The grant is read in the namespace of the target."
+      - id: d
+        text: "In `catalog`, and it must label the namespace `starfleet`."
+        explanation: "A grant does not use labels. It lists the kinds and namespaces in `from`."
+    correct_option: a
+    explanation: "The owner of the target namespace gives the permission, so the grant lives next to the Service."
+
+  - id: ats026-040-q11
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Read the RefNotPermitted reason"
+    source_readings:
+      - sections/section-040/module-02/course-03-cross-namespace-routes-and-reference-grants.md
+    prompt: |-
+      A route has `Accepted=True`. A request for its host name returns an HTTP 500 response. Which condition and reason explain this when the backend is in another namespace?
+    options:
+      - id: a
+        text: "`Accepted=False` with the reason `NotAllowedByListeners`."
+        explanation: "The route is accepted, so the attachment is allowed."
+      - id: b
+        text: "`Programmed=False` on the route."
+        explanation: "`Programmed` is a condition of the Gateway."
+      - id: c
+        text: "`Accepted=True` with the reason `BackendNotFound`."
+        explanation: "`BackendNotFound` belongs to `ResolvedRefs`."
+      - id: d
+        text: "`ResolvedRefs=False` with the reason `RefNotPermitted`. A `ReferenceGrant` is missing."
+        explanation: "Correct. The route may attach, but no grant in the Service namespace allows the reference, so the proxy has no usable backend."
+    correct_option: d
+    explanation: "The route may attach, but no grant in the Service namespace allows the reference, so the proxy has no usable backend."
+
+  - id: ats026-040-q12
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Diagnose and repair routes across namespaces without widening access"
+    source_readings:
+      - sections/section-040/capstone/labs/lab-01/question.md
+      - sections/section-040/module-02/course-03-cross-namespace-routes-and-reference-grants.md
+    prompt: |-
+      A listener uses a selector for the label `gateway-access=allowed`. The namespace `outpost` has no label. A route there shows `NotAllowedByListeners`. Which repair keeps the access narrow?
+    options:
+      - id: a
+        text: "Change the listener to `from: All`."
+        explanation: "That lets every namespace attach routes to the Gateway."
+      - id: b
+        text: "Label the namespace `outpost` with `gateway-access=allowed`. The Gateway and the route stay as they are."
+        explanation: "Correct. The selector works on namespace labels. The label gives only this namespace the right to attach."
+      - id: c
+        text: "Create a `ReferenceGrant` in `outpost`."
+        explanation: "A grant controls references to Services. It does not permit attachment to a Gateway."
+      - id: d
+        text: "Move the route into `kube-system`."
+        explanation: "This is not a repair and it changes the owner of the route."
+    correct_option: b
+    explanation: "The selector works on namespace labels. The label gives only this namespace the right to attach."

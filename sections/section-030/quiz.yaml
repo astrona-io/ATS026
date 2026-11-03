@@ -1,0 +1,306 @@
+# Knowledge check for section 030. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+---
+schema_version: 1
+kind: question_bank
+id: ats026-030
+course_id: ATS026
+exam_code: CKA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: section
+  id: section-030
+  title: Use ClusterIP, NodePort, LoadBalancer service types and endpoints
+questions:
+- id: ats026-030-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Explain which objects connect a Service selector to backend
+    Pods
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: The Service `probe` in `starfleet` exists and has a ClusterIP, but requests
+    fail and `kubectl get endpointslices -l kubernetes.io/service-name=probe` shows
+    a slice with no addresses. The Pods are `Running` and `Ready`. What is the most
+    likely cause?
+  options:
+  - id: a
+    text: The Service port is different from the container port.
+    explanation: This option would leave ready addresses in the slice and give a refused
+      connection.
+  - id: b
+    text: The ClusterIP is outside the Service range.
+    explanation: The API server allocates the ClusterIP, and an address outside the
+      range is rejected at creation.
+  - id: c
+    text: The Service selector does not match the labels of the Pods.
+    explanation: Correct. The EndpointSlice controller adds only Pods whose labels
+      contain every pair in the selector.
+  - id: d
+    text: The Service type must be NodePort for endpoints to exist.
+    explanation: Endpoints exist for every type that has a selector.
+  correct_option: c
+  explanation: A selector that matches no Pod gives an empty EndpointSlice and no
+    error. A wrong port would leave ready addresses in the slice. The Service type
+    does not decide whether endpoints exist.
+- id: ats026-030-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Trace a request from the Service port through targetPort to
+    the container listener
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: 'A Service has `port: 80` and `targetPort: 9000`. The Pods are ready and
+    listen only on port 8080. A client requests the Service. What does the client
+    see?'
+  options:
+  - id: a
+    text: A refused connection, because nothing listens on port 9000 of the Pod.
+    explanation: Correct. The Pods are selected and ready, so traffic reaches the
+      Pod address at port 9000 where no socket is open.
+  - id: b
+    text: A successful answer, because `kube-proxy` finds port 8080.
+    explanation: "`kube-proxy` forwards to the port in the EndpointSlice and does
+      not search for another port."
+  - id: c
+    text: A DNS error, because the Service name cannot be resolved.
+    explanation: DNS depends on the Service object, which exists.
+  - id: d
+    text: A timeout, because the selector matches no Pod.
+    explanation: The selector is correct in this case, since the Pods are ready endpoints.
+  correct_option: a
+  explanation: The EndpointSlice holds ready addresses with port 9000. The node answers
+    the connection to that port with a refusal.
+- id: ats026-030-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain the ready condition of an EndpointSlice address
+  source_readings:
+  - sections/section-030/module-01/course-01-selectors-ports-and-backends.md
+  prompt: One of three `probe` Pods shows `0/1` in the `READY` column and its status
+    is `Running`. What happens to new connections to the Service?
+  options:
+  - id: a
+    text: They still go to all three Pods, because the Pod is `Running`.
+    explanation: The status `Running` does not mean the Pod is ready for traffic.
+  - id: b
+    text: They fail, because a Service needs all Pods ready.
+    explanation: A Service sends traffic to the ready subset and does not need all
+      Pods ready.
+  - id: c
+    text: They go to the third Pod first, to give it load.
+    explanation: Not ready Pods get no new traffic.
+  - id: d
+    text: 'They go only to the two ready Pods, because the address of the third has
+      `ready: false`.'
+    explanation: Correct. `kube-proxy` removes addresses that are not ready from the
+      rules for new connections.
+  correct_option: d
+  explanation: The readiness probe drives the Pod `Ready` condition, and the EndpointSlice
+    controller copies it to the address.
+- id: ats026-030-q04
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Compare what ClusterIP, NodePort and LoadBalancer Services add
+  source_readings:
+  - sections/section-030/module-01/course-02-external-entry-and-application-routing.md
+  prompt: A team creates a Service of type `LoadBalancer` on a kind cluster with no
+    load balancer controller. What does `kubectl get service` show in the `EXTERNAL-IP`
+    column, and why?
+  options:
+  - id: a
+    text: An address from the Pod network, because kind assigns one.
+    explanation: kind does not assign external addresses to Services.
+  - id: b
+    text: "`<pending>`, because no controller provisions the external load balancer."
+    explanation: Correct. The pending state says that nothing provides the load balancer,
+      not that the application failed.
+  - id: c
+    text: The node address, because every Service gets one.
+    explanation: The node address is used only for the node port.
+  - id: d
+    text: "`<none>`, because the Service has no selector."
+    explanation: The column for ClusterIP Services shows `<none>`, and this Service
+      does have a selector.
+  correct_option: b
+  explanation: The Service gets a ClusterIP and a node port, but only a controller
+    can provision an external load balancer and write its address into the status.
+- id: ats026-030-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Describe how NodePort exposes a Service
+  source_readings:
+  - sections/section-030/module-01/course-02-external-entry-and-application-routing.md
+  prompt: 'A Service has `type: NodePort` and the allocated node port is 31234. Which
+    statement is correct?'
+  options:
+  - id: a
+    text: Only nodes that run a backend Pod open port 31234.
+    explanation: The rules exist on every node, with or without a local backend.
+  - id: b
+    text: The API server opens port 31234 on the control plane node.
+    explanation: The API server stores the allocation and does not open ports.
+  - id: c
+    text: Every node opens port 31234 and `kube-proxy` forwards it to the ready backends.
+    explanation: Correct. The backends can be on other nodes.
+  - id: d
+    text: The port is reachable from the internet as soon as the Service exists.
+    explanation: Routes and firewalls decide that; the Kubernetes object does not
+      change them.
+  correct_option: c
+  explanation: "`kube-proxy` writes the rules on every node, so every node accepts
+    the node port. Reachability from outside also depends on routing and firewalls."
+- id: ats026-030-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Choose the Service variant that returns the addresses of the
+    Pods
+  source_readings:
+  - sections/section-030/module-02/course-01-headless-externalname-and-selectorless-services.md
+  prompt: A client library must connect to each of the three replicas of a database.
+    Which Service gives it the three Pod addresses from one DNS lookup?
+  options:
+  - id: a
+    text: 'A ClusterIP Service with `sessionAffinity: ClientIP`.'
+    explanation: A ClusterIP Service returns one virtual address.
+  - id: b
+    text: 'A headless Service with `clusterIP: None` and a selector.'
+    explanation: Correct. No virtual address exists, so DNS returns the Pod addresses.
+  - id: c
+    text: An ExternalName Service that points to the Deployment name.
+    explanation: An ExternalName Service returns a CNAME to another DNS name, not
+      Pod addresses.
+  - id: d
+    text: 'A NodePort Service with `externalTrafficPolicy: Local`.'
+    explanation: The traffic policy does not change the DNS answer.
+  correct_option: b
+  explanation: CoreDNS answers a headless Service name with one A record for each
+    ready Pod address.
+- id: ats026-030-q07
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain what an ExternalName Service does
+  source_readings:
+  - sections/section-030/module-02/course-01-headless-externalname-and-selectorless-services.md
+  prompt: 'A Service `ledger` in `starfleet` has `type: ExternalName` and `externalName:
+    ledger.outpost.svc.cluster.local`. What does the cluster do when a Pod requests
+    `http://ledger/`?'
+  options:
+  - id: a
+    text: "`kube-proxy` forwards the connection from a ClusterIP to the target Pod."
+    explanation: An ExternalName Service has no ClusterIP and no forwarding rules.
+  - id: b
+    text: The API server creates an EndpointSlice for the target.
+    explanation: No EndpointSlice exists for this type.
+  - id: c
+    text: The connection fails, because an ExternalName Service has no ClusterIP.
+    explanation: The alias works because DNS returns the CNAME.
+  - id: d
+    text: CoreDNS answers with a CNAME to the target name, and the client connects
+      to the target directly.
+    explanation: Correct. The client resolves the target name and connects without
+      any proxy.
+  correct_option: d
+  explanation: An ExternalName Service is a DNS alias. Nothing proxies the connection.
+- id: ats026-030-q08
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Create a Service without a selector and give it addresses
+  source_readings:
+  - sections/section-030/module-02/course-01-headless-externalname-and-selectorless-services.md
+  prompt: A Service `database` has no `spec.selector`. An administrator wants it to
+    forward to the address 10.20.0.15. What must exist for the Service to have a backend?
+  options:
+  - id: a
+    text: 'An EndpointSlice with the label `kubernetes.io/service-name: database`
+      and the address.'
+    explanation: Correct. The label ties the slice to the Service.
+  - id: b
+    text: 'A Pod with the label `app: database`.'
+    explanation: There is no selector, so labels on Pods do not matter.
+  - id: c
+    text: An Ingress that points to the Service.
+    explanation: An Ingress does not create backends for a Service.
+  - id: d
+    text: Nothing, because a Service without a selector forwards to any address.
+    explanation: With no slice, the Service has no backends.
+  correct_option: a
+  explanation: The controller creates no slice for a selectorless Service, so the
+    administrator writes one.
+- id: ats026-030-q09
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain ClientIP session affinity
+  source_readings:
+  - sections/section-030/module-02/course-02-session-affinity-traffic-policy-and-kube-proxy.md
+  prompt: 'A Service uses `sessionAffinity: ClientIP` with the default timeout. Two
+    users sit behind one NAT device and reach the Service. Which statement is correct?'
+  options:
+  - id: a
+    text: The users reach different Pods, because the affinity works per HTTP cookie.
+    explanation: ClientIP affinity does not read cookies.
+  - id: b
+    text: Both users reach the same Pod, because the source address is the same.
+    explanation: Correct. The Service sees one source address for both users.
+  - id: c
+    text: The affinity ends after one connection.
+    explanation: The entry lasts until the timeout expires, and each new connection
+      refreshes it.
+  - id: d
+    text: The users cannot reach the Service.
+    explanation: The Service is reachable, and affinity only controls the backend
+      choice.
+  correct_option: b
+  explanation: The affinity uses the client source address only, and the default timeout
+    is 10800 seconds.
+- id: ats026-030-q10
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Explain externalTrafficPolicy Local
+  source_readings:
+  - sections/section-030/module-02/course-02-session-affinity-traffic-policy-and-kube-proxy.md
+  prompt: 'A NodePort Service has `externalTrafficPolicy: Local`. A request arrives
+    at a node that runs no backend Pod. What happens?'
+  options:
+  - id: a
+    text: The node forwards the connection to a backend on another node.
+    explanation: That is the behaviour of the default policy `Cluster`.
+  - id: b
+    text: The node answers with a redirect to the ClusterIP.
+    explanation: Nodes do not redirect.
+  - id: c
+    text: The node starts a new backend Pod.
+    explanation: "`kube-proxy` does not start Pods."
+  - id: d
+    text: The node drops the connection, because it forwards only to local backends.
+    explanation: Correct. This is the cost of preserving the source address.
+  correct_option: d
+  explanation: With `Local`, the node keeps the client source address and uses only
+    local ready backends.
+- id: ats026-030-q11
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Tell an empty selector match, a wrong targetPort and a failed
+    readiness probe apart
+  source_readings:
+  - sections/section-030/module-01/course-03-guided-practice.md
+  prompt: 'Requests to a Service fail quickly with a refusal. The EndpointSlice lists
+    two addresses with `ready: true`. What is the next check?'
+  options:
+  - id: a
+    text: Compare the selector with the Pod labels.
+    explanation: Ready addresses already show that the selector matches.
+  - id: b
+    text: Check the readiness probe of the Pods.
+    explanation: The addresses are ready, so the probe passes.
+  - id: c
+    text: Compare the Service targetPort with the port the container listens on.
+    explanation: Correct. The Pod is reached, and no process listens on the target
+      port.
+  - id: d
+    text: Look for a NetworkPolicy that drops the packets.
+    explanation: A policy drop gives a timeout, not a refusal.
+  correct_option: c
+  explanation: Ready addresses mean the selector and the readiness are fine. A quick
+    refusal means a closed port.

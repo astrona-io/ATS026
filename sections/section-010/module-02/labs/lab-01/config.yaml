@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Repair Pods That Cannot Be Reached (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-010-02-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads and the fault
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: relay-answers
+      description: "The relay Service answers HTTP 200 from the shuttle client"
+      type: file
+      source: validation/validate-relay-answers.sh
+      hint: "The relay server refuses requests that arrive on the Pod IP. Read its configuration in the relay-conf ConfigMap and check which address it listens on."
+    - name: relay-pod-ip
+      description: "The relay Pod answers on its Pod IP, not only on the loopback address"
+      type: file
+      source: validation/validate-relay-pod-ip.sh
+      hint: "Request the Pod IP directly. The server must listen on all addresses, not on 127.0.0.1."
+    - name: beacon-answers
+      description: "The beacon Service answers HTTP 200 from the shuttle client"
+      type: file
+      source: validation/validate-beacon-answers.sh
+      hint: "Compare the Service targetPort with the port the beacon container really listens on."
+    - name: services-keep-port-80
+      description: "Both Services still expose port 80 and relay still forwards to 8080"
+      type: file
+      source: validation/validate-services-keep-port-80.sh
+      hint: "Fix the cause, not the client contract: clients keep using port 80."
+    - name: images-unchanged
+      description: "The relay and beacon images are unchanged"
+      type: file
+      source: validation/validate-images-unchanged.sh
+      hint: "Do not replace the workloads; repair the configuration."
+
+teardown:
+  keepCluster: false

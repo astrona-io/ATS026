@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Capstone: Repair Gateway Routes Across Namespaces (LAB). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-lab-040-capstone-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    addons:
+      gatewayAPI: envoy
+      gatewayPorts:
+        http: 18084
+        https: 18447
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - ghcr.io/stefanprodan/podinfo:6.15.0
+      - mccutchen/go-httpbin:2.25.0
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the workloads, the Gateway edge and three routes with faults
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: drifter-attached
+      description: "The route drifter in outpost is accepted and reaches the Service drifter"
+      type: file
+      source: validation/validate-drifter-attached.sh
+      hint: "Read the Accepted condition of the route. The reason names the owner who must act: here the Gateway owner decides with a namespace label."
+    - name: stock-reference-granted
+      description: "The route stock in starfleet reaches the Service stock in catalog"
+      type: file
+      source: validation/validate-stock-reference-granted.sh
+      hint: "Read the ResolvedRefs condition of the route. A ReferenceGrant lives in the namespace of the Service."
+    - name: grant-is-narrow
+      description: "The grant names only the Service stock and only HTTPRoute objects from starfleet"
+      type: file
+      source: validation/validate-grant-is-narrow.sh
+      hint: "Set name under spec.to. Do not label the namespace catalog."
+    - name: scout-canary-and-weights
+      description: "The header x-canary: true reaches scout-v2 and plain requests are served"
+      type: file
+      source: validation/validate-scout-canary-and-weights.sh
+      hint: "Add a rule with an Exact header match for x-canary. The rule with the header match must beat the default rule."
+    - name: scout-weights
+      description: "The default rule sends weight 90 to scout-v1 and weight 10 to scout-v2"
+      type: file
+      source: validation/validate-scout-weights.sh
+      hint: "The weights in the starting route are reversed."
+    - name: gateway-not-widened
+      description: "The Gateway edge still uses a Selector and the workloads are unchanged"
+      type: file
+      source: validation/validate-gateway-not-widened.sh
+      hint: "Fix the problem with a label on the namespace, not by changing the Gateway."
+
+teardown:
+  keepCluster: false

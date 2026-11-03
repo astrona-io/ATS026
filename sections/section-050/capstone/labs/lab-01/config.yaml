@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://cli.astrona.io/schema/lab-config.schema.json
+#
+# Publish An Application Through An Ingress With TLS (CAPSTONE). Graded against the live cluster. Status: UNTESTED (static checks only).
+apiVersion: astrona.io/v1
+metadata:
+  name: ats-026-capstone-050-01
+  docs:
+    prerequisites: prerequisites.md
+    question: question.md
+    solution: solution.md
+
+runtime:
+  type: kind
+  kind:
+    image: kindest/node:v1.35.8
+    preloadImages:
+      - curlimages/curl:8.22.0
+      - docker.io/library/traefik:v3.6.1
+      - nginx:1.31.6-alpine
+    nodes:
+      workers: 1
+
+bootstrap:
+  init:
+    - name: seed-cluster
+      description: Create the controller, the applications, the certificate and the broken Ingress
+      type: file
+      source: bootstrap/01-seed-cluster.sh
+
+testing:
+  init:
+    - name: apply-solution
+      description: Apply the reference solution
+      type: file
+      source: solution/apply.sh
+
+validation:
+  scripts:
+    - name: portal-class
+      description: "The Ingress portal selects the IngressClass traefik"
+      type: file
+      source: validation/validate-portal-class.sh
+      hint: "The class legacy has no controller. Check the class with kubectl get ingressclass and the field spec.ingressClassName of the Ingress."
+    - name: web-endpoints
+      description: "The Service web has a ready endpoint"
+      type: file
+      source: validation/validate-web-endpoints.sh
+      hint: "Compare the selector of the Service web with the labels of the web Pods, and read the EndpointSlice of the Service."
+    - name: api-backend-port
+      description: "The /api path points at a port that the Service api exposes"
+      type: file
+      source: validation/validate-api-backend-port.sh
+      hint: "An Ingress backend names a Service port, not a container port. Read the ports of the Service api."
+    - name: tls-config
+      description: "The Ingress portal terminates TLS for portal.local with the Secret portal-tls"
+      type: file
+      source: validation/validate-tls-config.sh
+      hint: "Add a tls entry with the host portal.local and the secretName portal-tls to the Ingress."
+    - name: https-web
+      description: "https://portal.local/ returns the web backend with certificate verification"
+      type: file
+      source: validation/validate-https-web.sh
+      hint: "Verify with the certificate in the Secret portal-tls. Do not disable verification."
+    - name: https-api
+      description: "https://portal.local/api/v1 returns the api backend with certificate verification"
+      type: file
+      source: validation/validate-https-api.sh
+      hint: "The api backend must receive the path /api/v1 unchanged. Keep the Prefix path /api."
+    - name: unmatched-host
+      description: "A request for another host over HTTPS returns the controller 404 and not an application answer"
+      type: file
+      source: validation/validate-unmatched-host.sh
+      hint: "Keep the host portal.local on the rules. Do not remove the host to make the rules match every host."
+    - name: workloads-unchanged
+      description: "The images, the Deployments and the controller are unchanged"
+      type: file
+      source: validation/validate-workloads-unchanged.sh
+      hint: "Repair the Service, the class, the port and the TLS section. Do not replace the workloads."
+
+teardown:
+  keepCluster: false
