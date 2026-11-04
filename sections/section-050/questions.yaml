@@ -3,7 +3,7 @@ kind: question_bank
 id: ats026-section-050
 course_id: ATS026
 exam_code: CKA
-status: draft
+status: alpha
 provenance: Original practice material; not official examination questions.
 scope:
   type: section

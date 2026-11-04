@@ -55,7 +55,7 @@ sections:
       after_reading: sections/section-010/module-01/course-02-dns-and-service-discovery.md
       objective: Compare a resolved Service name with the actual ClusterIP and repeat
         the application request.
-      status: draft
+      status: alpha
       runtime_verification: pending
     practice_readings:
     - sections/section-010/module-01/course-03-guided-practice.md
@@ -90,14 +90,14 @@ sections:
       after_reading: sections/section-020/module-01/course-01-traffic-isolation-and-allowed-peers.md
       objective: Enforce both an allowed same-namespace peer and a denied peer in
         another namespace.
-      status: draft
+      status: alpha
       runtime_verification: pending
     - id: lab-02
       path: sections/section-020/module-01/labs/lab-02
       after_reading: sections/section-020/module-01/course-02-networkpolicy-and-allowed-connections.md
       objective: Allow name resolution and application access while denying a healthy
         unrelated listener.
-      status: draft
+      status: alpha
       runtime_verification: pending
     practice_readings:
     - sections/section-020/module-01/course-03-guided-practice.md
@@ -132,14 +132,14 @@ sections:
       after_reading: sections/section-030/module-01/course-01-selectors-ports-and-backends.md
       objective: Restore backend selection while preserving the existing client and
         listener ports.
-      status: draft
+      status: alpha
       runtime_verification: pending
     - id: lab-02
       path: sections/section-030/module-01/labs/lab-02
       after_reading: sections/section-030/module-01/course-02-external-entry-and-application-routing.md
       objective: Verify the client port, backend listener and allocated node entry
         port separately.
-      status: draft
+      status: alpha
       runtime_verification: pending
     practice_readings:
     - sections/section-030/module-01/course-03-guided-practice.md
@@ -175,7 +175,7 @@ sections:
       after_reading: sections/section-040/module-01/course-01-gateway-api-roles-listeners-and-attached-routes.md
       objective: Connect class, listener, route and backend and inspect controller
         acceptance.
-      status: draft
+      status: alpha
       runtime_verification: pending
     practice_readings:
     - sections/section-040/module-01/course-02-guided-practice.md
@@ -209,14 +209,14 @@ sections:
       path: sections/section-050/module-01/labs/lab-01
       after_reading: sections/section-050/module-01/course-01-matching-ingress-hosts-paths-and-service-backends.md
       objective: Verify host matching and backend routing through the controller.
-      status: draft
+      status: alpha
       runtime_verification: pending
     - id: lab-02
       path: sections/section-050/module-01/labs/lab-02
       after_reading: sections/section-050/module-01/course-02-tracing-an-external-request-to-the-application.md
       objective: Route HTTPS through the controller and verify both matching and mismatched
         certificate identities.
-      status: draft
+      status: alpha
       runtime_verification: pending
     practice_readings:
     - sections/section-050/module-01/course-03-guided-practice.md
@@ -248,7 +248,7 @@ sections:
       after_reading: sections/section-060/module-01/course-01-coredns-configuration-and-cluster-name-resolution.md
       objective: Trace failed name resolution to a Corefile syntax error and restore
         the saved configuration.
-      status: draft
+      status: alpha
       runtime_verification: pending
     practice_readings:
     - sections/section-060/module-01/course-02-guided-practice.md
