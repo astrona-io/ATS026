@@ -92,7 +92,7 @@ modules:
     difficulty: intermediate
     estimated_duration: 25m
     topic: connectivity-diagnosis
-    task_kind: troubleshoot
+    task_kind: troubleshooting
     learning_goals:
     - Repair a server that listens only on the loopback address.
     - Repair a Service whose targetPort does not match the container port.
@@ -112,7 +112,7 @@ modules:
     difficulty: advanced
     estimated_duration: 30m
     topic: connectivity-diagnosis
-    task_kind: troubleshoot
+    task_kind: troubleshooting
     learning_goals:
     - Read how a request ends and name the failing layer for three workloads.
     - Repair a loopback bind, a wrong targetPort and a selector that matches no Pod
@@ -622,7 +622,7 @@ modules:
     difficulty: intermediate
     estimated_duration: 20m
     topic: coredns-configuration
-    task_kind: troubleshoot
+    task_kind: troubleshooting
     tags:
     - cka
     - coredns
