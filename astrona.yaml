@@ -420,6 +420,9 @@ modules:
     title: Attach An HTTPRoute To A Gateway — Solution
     path: sections/section-040/module-01/labs/lab-01/solution.md
   - type: reading
+    title: 'Guided Practice: Attach An HTTPRoute To A Gateway'
+    path: sections/section-040/module-01/course-02-guided-practice.md
+  - type: reading
     title: Summary
     path: sections/section-040/module-01/course-03-summary.md
   - type: reading
@@ -534,6 +537,9 @@ modules:
     - cka
     - ingress-tls
   - type: reading
+    title: 'Guided Practice: Route A Matching Host Through Ingress'
+    path: sections/section-050/module-01/course-03-guided-practice.md
+  - type: reading
     title: Summary
     path: sections/section-050/module-01/course-04-summary.md
   - type: reading
@@ -630,6 +636,9 @@ modules:
       url: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/
     - name: Debugging DNS Resolution
       url: https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+  - type: reading
+    title: 'Guided Practice: Restore A Broken CoreDNS Configuration'
+    path: sections/section-060/module-01/course-02-guided-practice.md
   - type: reading
     title: Summary
     path: sections/section-060/module-01/course-03-summary.md
